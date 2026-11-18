@@ -1,18 +1,33 @@
 {
-  "name": "Hotel_Management_system_Backend",
+  "name": "luxurystay-api",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "dev": "nodemon index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "private": true,
+  "description": "LuxuryStay Hospitality hotel management REST API",
   "type": "module",
+  "main": "src/server.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js"
+  },
+  "keywords": [
+    "hotel-management",
+    "express",
+    "mongoose",
+    "rest-api"
+  ],
+  "license": "UNLICENSED",
   "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.10",
     "express": "^5.3.0",
+    "helmet": "^8.3.0",
+    "mongoose": "^9.12.2",
+    "morgan": "^1.12.1"
+  },
+  "devDependencies": {
     "nodemon": "^3.1.14"
   }
 }
