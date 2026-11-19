@@ -42,4 +42,28 @@ export function protect(req, res, next) {
   }
 }
 
+/**
+ * Restrict a route to one or more roles.
+ * Must run after `protect` so req.user is populated.
+ */
+export function authorize(...roles) {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Not authorized: authentication is required',
+      })
+    }
+
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Forbidden: you do not have permission to access this resource',
+      })
+    }
+
+    return next()
+  }
+}
+
 export default protect

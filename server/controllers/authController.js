@@ -120,6 +120,41 @@ export async function register(req, res) {
 }
 
 /**
+ * GET /api/auth/me
+ * Returns the authenticated user's profile. Requires `protect`.
+ */
+export async function getMe(req, res) {
+  try {
+    const user = await User.findById(req.user.id).select('-password')
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User no longer exists',
+      })
+    }
+
+    return res.status(200).json({
+      success: true,
+      user: toPublicUser(user),
+    })
+  } catch (error) {
+    if (error.name === 'CastError') {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid or expired token',
+      })
+    }
+
+    console.error('[auth] getMe failed:', error)
+    return res.status(500).json({
+      success: false,
+      message: 'Unable to load profile',
+    })
+  }
+}
+
+/**
  * POST /api/auth/login
  * Returns the same generic error for unknown emails and bad passwords.
  */
