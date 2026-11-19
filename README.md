@@ -45,15 +45,13 @@ Hotel_Management_System_MERN/
 │   └── vite.config.js
 │
 ├── server/                     # Express API
-│   ├── src/
-│   │   ├── config/             # DB connection & environment bootstrapping
-│   │   ├── controllers/        # Request handlers (no business logic in routes)
-│   │   ├── middleware/         # Auth, validation, error handling
-│   │   ├── models/             # Mongoose schemas
-│   │   ├── routes/             # Express routers
-│   │   ├── utils/              # Shared helpers
-│   │   ├── app.js              # Express app assembly
-│   │   └── server.js           # Process entry point
+│   ├── config/
+│   │   └── db.js               # MongoDB connection
+│   ├── controllers/            # Request handlers (added with each feature)
+│   ├── middleware/             # Auth, validation, error handling
+│   ├── models/                 # Mongoose schemas
+│   ├── routes/                 # Express routers
+│   ├── server.js               # Express app + process entry point
 │   ├── .env.example            # Committed template
 │   └── package.json
 │
