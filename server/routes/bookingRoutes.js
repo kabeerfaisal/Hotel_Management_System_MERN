@@ -14,6 +14,9 @@ const STAFF_ROLES = ['admin', 'manager', 'receptionist']
 // Any authenticated user can create a booking.
 router.post('/', protect, createBooking)
 
+// Authenticated user can fetch their own bookings.
+router.get('/me', protect, getMyBookings)
+
 // Staff manage the reservation book.
 router.get('/', protect, authorize(...STAFF_ROLES), getAllBookings)
 router.put('/:id/status', protect, authorize(...STAFF_ROLES), updateBookingStatus)

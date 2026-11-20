@@ -29,6 +29,7 @@ function Rooms() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
 
+  const [isRoomModalOpen, setIsRoomModalOpen] = useState(false)
   const [bookings, setBookings] = useState([])
   const [isLoadingBookings, setIsLoadingBookings] = useState(true)
 
@@ -175,23 +176,42 @@ function Rooms() {
         </div>
 
         {isStaff ? (
-          <button
-            type="button"
-            onClick={() => reloadBookings()}
-            className="inline-flex items-center gap-2 rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-on-accent transition-opacity hover:opacity-90"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              className="size-4"
-              aria-hidden="true"
+          <div className="flex flex-wrap items-end gap-2">
+            <button
+              type="button"
+              onClick={() => setIsRoomModalOpen(true)}
+              className="inline-flex items-center gap-2 rounded-full bg-success px-4 py-2 text-sm font-semibold text-on-success transition-opacity hover:opacity-90"
             >
-              <path strokeLinecap="round" d="M12 5v14M5 12h14" />
-            </svg>
-            Staff bookings
-          </button>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                className="size-3"
+                aria-hidden="true"
+              >
+                <path strokeLinecap="round" d="M12 5v13M5 12h14" />
+              </svg>
+              Add room
+            </button>
+            <button
+              type="button"
+              onClick={() => reloadBookings()}
+              className="inline-flex items-center gap-2 rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-on-accent transition-opacity hover:opacity-90"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                className="size-4"
+                aria-hidden="true"
+              >
+                <path strokeLinecap="round" d="M12 5v14M5 12h14" />
+              </svg>
+              Staff bookings
+            </button>
+          </div>
         ) : null}
       </div>
 
@@ -562,5 +582,13 @@ function Rooms() {
     </section>
   )
 }
+
+{isRoomModalOpen && (
+        <RoomFormModal
+          room={undefined}
+          onClose={() => setIsRoomModalOpen(false)}
+          onSubmit={handleSaveRoom}
+        />
+      )}
 
 export default Rooms

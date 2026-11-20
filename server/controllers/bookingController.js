@@ -190,6 +190,26 @@ export async function getAllBookings(req, res) {
 }
 
 /**
+ * GET /api/bookings/me
+ * Authenticated user can fetch their own bookings.
+ */
+export async function getMyBookings(req, res) {
+  try {
+    const bookings = await Booking.find({ user: req.user.id })
+      .populate(BOOKING_POPULATE)
+      .sort({ createdAt: -1 })
+
+    return res.status(200).json({
+      success: true,
+      count: bookings.length,
+      bookings,
+    })
+  } catch (error) {
+    return sendBookingError(res, error, 'Unable to load your bookings')
+  }
+}
+
+/**
  * PUT /api/bookings/:id/status
  * Staff only. Moving a booking to `cancelled` releases its dates.
  */

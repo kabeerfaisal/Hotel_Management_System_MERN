@@ -17,6 +17,14 @@ export async function getAllBookings() {
 }
 
 /**
+ * Fetch bookings for the authenticated user.
+ */
+export async function getMyBookings() {
+  const { data } = await api.get('/bookings/me')
+  return data.bookings
+}
+
+/**
  * Move a booking to a new status. Staff only.
  */
 export async function updateBookingStatus(id, status) {
