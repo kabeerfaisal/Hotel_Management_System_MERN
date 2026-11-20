@@ -34,11 +34,11 @@ Hotel_Management_System_MERN/
 │   ├── public/
 │   ├── src/
 │   │   ├── assets/             # Images, icons, fonts
-│   │   ├── components/         # ProtectedRoute + shared UI primitives
+│   │   ├── components/         # Shared UI, ProtectedRoute, layout/ shell
 │   │   ├── config/             # Constants (API base URL, storage keys)
 │   │   ├── context/            # AuthContext + useAuth hook
 │   │   ├── hooks/              # Custom React hooks
-│   │   ├── pages/              # Route-level views (Home, Login, Register)
+│   │   ├── pages/              # Route-level views (Home, Login, Register, …)
 │   │   ├── routes/             # AppRoutes — the single route table
 │   │   ├── services/           # Axios instance + feature API modules
 │   │   ├── App.jsx
