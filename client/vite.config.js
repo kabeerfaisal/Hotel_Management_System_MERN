@@ -6,7 +6,8 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
-    port: 5173,
+    port: 3000,
+    strictPort: true,
     proxy: {
       // Same-origin API calls in development — no CORS surprises in the browser.
       '/api': {

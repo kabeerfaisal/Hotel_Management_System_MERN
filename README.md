@@ -108,7 +108,6 @@ Then edit `server/.env` with your own values. **Never commit `.env`.**
 | `MONGO_URI`      | yes      | MongoDB connection string                         |
 | `JWT_SECRET`     | yes      | Long random string used to sign access tokens     |
 | `JWT_EXPIRES_IN` | no       | Token lifetime, e.g. `7d`                         |
-| `CLIENT_ORIGIN`  | no       | Allowed CORS origin (default `http://localhost:5173`) |
 
 Generate a strong JWT secret:
 
@@ -123,7 +122,7 @@ node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
 cd server
 npm run dev
 
-# Terminal 2 — client on http://localhost:5173
+# Terminal 2 — client on http://localhost:3000
 cd client
 npm run dev
 ```
