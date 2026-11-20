@@ -19,6 +19,12 @@
   --color-line-strong: var(--lux-line-strong);
   --color-danger: var(--lux-danger);
   --color-danger-surface: var(--lux-danger-surface);
+  --color-success: var(--lux-success);
+  --color-success-surface: var(--lux-success-surface);
+  --color-warning: var(--lux-warning);
+  --color-warning-surface: var(--lux-warning-surface);
+  --color-info: var(--lux-info);
+  --color-info-surface: var(--lux-info-surface);
 
   --font-sans: var(--lux-font-sans);
   --font-display: var(--lux-font-display);
@@ -41,6 +47,12 @@
     --lux-line-strong: oklch(0.55 0.015 70);
     --lux-danger: oklch(0.5 0.19 25);
     --lux-danger-surface: oklch(0.95 0.03 25);
+    --lux-success: oklch(0.44 0.12 150);
+    --lux-success-surface: oklch(0.95 0.04 150);
+    --lux-warning: oklch(0.48 0.11 70);
+    --lux-warning-surface: oklch(0.96 0.05 85);
+    --lux-info: oklch(0.45 0.09 240);
+    --lux-info-surface: oklch(0.95 0.03 240);
 
     --lux-font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI",
       Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -63,6 +75,12 @@
       --lux-line-strong: oklch(0.62 0.012 70);
       --lux-danger: oklch(0.75 0.15 25);
       --lux-danger-surface: oklch(0.28 0.06 25);
+      --lux-success: oklch(0.8 0.13 150);
+      --lux-success-surface: oklch(0.28 0.06 150);
+      --lux-warning: oklch(0.85 0.12 85);
+      --lux-warning-surface: oklch(0.3 0.06 80);
+      --lux-info: oklch(0.8 0.09 240);
+      --lux-info-surface: oklch(0.29 0.05 240);
     }
   }
 

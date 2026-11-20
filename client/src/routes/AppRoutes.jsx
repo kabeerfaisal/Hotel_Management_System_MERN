@@ -6,6 +6,7 @@ import Home from '../pages/Home.jsx'
 import Login from '../pages/Login.jsx'
 import Placeholder from '../pages/Placeholder.jsx'
 import Register from '../pages/Register.jsx'
+import Rooms from '../pages/Rooms.jsx'
 
 function AppRoutes() {
   return (
@@ -18,7 +19,7 @@ function AppRoutes() {
       <Route element={<ProtectedRoute />}>
         <Route element={<DashboardLayout />}>
           <Route index element={<Home />} />
-          <Route path="rooms" element={<Placeholder title="Rooms" />} />
+          <Route path="rooms" element={<Rooms />} />
           <Route path="bookings" element={<Placeholder title="Bookings" />} />
         </Route>
       </Route>
