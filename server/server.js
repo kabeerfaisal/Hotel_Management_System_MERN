@@ -5,6 +5,7 @@ import express from 'express'
 
 import { connectDB } from './config/db.js'
 import authRoutes from './routes/authRoutes.js'
+import bookingRoutes from './routes/bookingRoutes.js'
 import roomRoutes from './routes/roomRoutes.js'
 
 const app = express()
@@ -26,6 +27,7 @@ app.get('/', (req, res) => {
 // ── Routes ───────────────────────────────────────────────────
 app.use('/api/auth', authRoutes)
 app.use('/api/rooms', roomRoutes)
+app.use('/api/bookings', bookingRoutes)
 
 // ── Bootstrap ────────────────────────────────────────────────
 async function start() {
