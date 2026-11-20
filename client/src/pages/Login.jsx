@@ -102,8 +102,12 @@ function Login() {
         </form>
 
         <p className="mt-6 text-center text-sm text-muted">
-          <Link to="/" className="font-medium text-content underline-offset-4 hover:underline">
-            Back to home
+          New to LuxuryStay?{' '}
+          <Link
+            to="/register"
+            className="font-medium text-content underline-offset-4 hover:underline"
+          >
+            Create an account
           </Link>
         </p>
       </section>

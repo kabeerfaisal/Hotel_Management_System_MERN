@@ -1,9 +1,9 @@
 import axios from 'axios'
 
-export const TOKEN_STORAGE_KEY = 'luxurystay_token'
+import { API_BASE_URL, TOKEN_STORAGE_KEY } from '../config/constants.js'
 
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
