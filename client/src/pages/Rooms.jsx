@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { formatPKR, formatStayDate, countNights } from '../utils/formatters.js'
+
 import RoomFormModal from '../components/rooms/RoomFormModal.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import {
@@ -8,8 +10,7 @@ import {
   getRooms,
   updateRoom,
 } from '../services/roomService.js'
-
-const STAFF_ROLES = ['admin', 'manager']
+import { createBooking, getAllBookings } from '../services/bookingService.js'
 
 const STATUS_BADGES = {
   available: { label: 'Available', className: 'bg-success-surface text-success' },
@@ -18,36 +19,25 @@ const STATUS_BADGES = {
   maintenance: { label: 'Maintenance', className: 'bg-info-surface text-info' },
 }
 
-const priceFormatter = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-})
-
-function getRoomErrorMessage(requestError, fallback) {
-  return requestError.response?.data?.message ?? fallback
-}
+const STAFF_ROLES = ['admin', 'manager', 'receptionist']
 
 function Rooms() {
   const { user } = useAuth()
-  const canManage = STAFF_ROLES.includes(user?.role)
+  const isStaff = STAFF_ROLES.includes(user?.role)
 
   const [rooms, setRooms] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
-  const [actionError, setActionError] = useState('')
-  const [deletingId, setDeletingId] = useState(null)
-  // undefined = closed, null = create, room object = edit
-  const [modalRoom, setModalRoom] = useState(undefined)
+
+  const [bookings, setBookings] = useState([])
+  const [isLoadingBookings, setIsLoadingBookings] = useState(true)
 
   const availableCount = useMemo(
     () => rooms.filter((room) => room.status === 'available').length,
     [rooms],
   )
 
-  // Used by the retry button and after a room is saved. The initial load
-  // lives in the effect below so state updates stay asynchronous.
+  // ── Room loading ────────────────────────────────────────────
   const reloadRooms = useCallback(async ({ showSpinner = false } = {}) => {
     if (showSpinner) setIsLoading(true)
     setError('')
@@ -55,34 +45,39 @@ function Rooms() {
     try {
       setRooms(await getRooms())
     } catch (requestError) {
-      setError(getRoomErrorMessage(requestError, 'Unable to load rooms. Please try again.'))
+      setError(
+        requestError.response?.data?.message ??
+          'Unable to load rooms. Please try again.',
+      )
     } finally {
       if (showSpinner) setIsLoading(false)
     }
   }, [])
 
   useEffect(() => {
-    let isActive = true
+    reloadRooms()
+  }, [reloadRooms])
 
-    getRooms()
-      .then((loadedRooms) => {
-        if (!isActive) return
-        setRooms(loadedRooms)
-      })
-      .catch((requestError) => {
-        if (!isActive) return
-        setError(
-          getRoomErrorMessage(requestError, 'Unable to load rooms. Please try again.'),
-        )
-      })
-      .finally(() => {
-        if (isActive) setIsLoading(false)
-      })
+  // ── Bookings loading ────────────────────────────────────────
+  const reloadBookings = useCallback(async () => {
+    setIsLoadingBookings(true)
+    setError('')
 
-    return () => {
-      isActive = false
+    try {
+      setBookings(await getAllBookings())
+    } catch (requestError) {
+      setError(
+        requestError.response?.data?.message ??
+          'Unable to load bookings. Please try again.',
+      )
+    } finally {
+      setIsLoadingBookings(false)
     }
   }, [])
+
+  useEffect(() => {
+    reloadBookings()
+  }, [reloadBookings])
 
   const handleSaveRoom = async (values) => {
     if (modalRoom) {
@@ -96,8 +91,7 @@ function Rooms() {
   }
 
   const handleDeleteRoom = async (room) => {
-    setActionError('')
-
+    // ... same as before
     if (!window.confirm(`Delete room ${room.roomNumber}? This cannot be undone.`)) {
       return
     }
@@ -117,10 +111,50 @@ function Rooms() {
     }
   }
 
-  const columnCount = canManage ? 6 : 5
+  // ── Guest Book Now ───────────────────────────────────────────
+  const [guestModalRoom, setGuestModalRoom] = useState(null)
+  const [guestModalError, setGuestModalError] = useState('')
+
+  const openGuestBooking = (room) => {
+    setGuestModalRoom(room)
+    setGuestModalError('')
+  }
+
+  const closeGuestBooking = () => {
+    setGuestModalRoom(null)
+    setGuestModalError('')
+  }
+
+  const handleGuestBookingSubmit = async (bookingData) => {
+    try {
+      const created = await createBooking({
+        room: guestModalRoom._id,
+        checkInDate: bookingData.checkInDate,
+        checkOutDate: bookingData.checkOutDate,
+        user: user?.id,
+      })
+      closeGuestBooking()
+      await reloadRooms()
+    } catch (requestError) {
+      setGuestModalError(
+        requestError.response?.data?.message ??
+          'Unable to create booking. Please try again.',
+      )
+    }
+  }
+
+  // ── Staff bookings table ─────────────────────────────────────
+  const statusColorMap = {
+    pending: 'bg-warning-surface text-warning',
+    confirmed: 'bg-success-surface text-success',
+    checked_in: 'bg-info-surface text-info',
+    checked_out: 'bg-muted text-muted',
+    cancelled: 'bg-danger-surface text-danger',
+  }
 
   return (
     <section>
+      {/* ── Header ─────────────────────────────────────────────── */}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-xs font-medium tracking-[0.18em] text-muted uppercase">
@@ -133,17 +167,17 @@ function Rooms() {
             {rooms.length} {rooms.length === 1 ? 'room' : 'rooms'} ·{' '}
             {availableCount} available
           </p>
-          {!canManage ? (
+          {!isStaff ? (
             <p className="mt-1 text-xs text-muted">
               Read-only access — admins and managers manage the inventory.
             </p>
           ) : null}
         </div>
 
-        {canManage ? (
+        {isStaff ? (
           <button
             type="button"
-            onClick={() => setModalRoom(null)}
+            onClick={() => reloadBookings()}
             className="inline-flex items-center gap-2 rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-on-accent transition-opacity hover:opacity-90"
           >
             <svg
@@ -156,31 +190,15 @@ function Rooms() {
             >
               <path strokeLinecap="round" d="M12 5v14M5 12h14" />
             </svg>
-            Add room
+            Staff bookings
           </button>
         ) : null}
       </div>
 
-      {actionError ? (
-        <div
-          role="alert"
-          className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-danger/40 bg-danger-surface px-4 py-3 text-sm text-danger"
-        >
-          <span>{actionError}</span>
-          <button
-            type="button"
-            onClick={() => setActionError('')}
-            className="text-xs font-semibold underline underline-offset-4"
-          >
-            Dismiss
-          </button>
-        </div>
-      ) : null}
-
       {error ? (
         <div
           role="alert"
-          className="mt-8 rounded-2xl border border-danger/40 bg-danger-surface p-6 text-sm text-danger"
+          className="mt-6 rounded-2xl border border-danger/40 bg-danger-surface p-6 text-sm text-danger"
         >
           <p>{error}</p>
           <button
@@ -191,7 +209,237 @@ function Rooms() {
             Try again
           </button>
         </div>
-      ) : (
+      ) : null}
+
+      {/* ── Rooms table ────────────────────────────────────────── */}
+      {isStaff ? (
+        <div className="mt-8 overflow-hidden rounded-2xl border border-line bg-surface shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[44rem] text-left text-sm">
+              <thead className="bg-elevated/60 text-xs tracking-[0.14em] text-muted uppercase">
+                <tr>
+                  <th scope="col" className="px-4 py-3 font-medium sm:px-6">
+                    Guest
+                  </th>
+                  <th scope="col" className="px-4 py-3 font-medium">
+                    Room
+                  </th>
+                  <th scope="col" className="px-4 py-3 font-medium">
+                    Check-in
+                  </th>
+                  <th scope="col" className="px-4 py-3 font-medium">
+                    Check-out
+                  </th>
+                  <th scope="col" className="px-4 py-3 font-medium">
+                    Total
+                  </th>
+                  <th scope="col" className="px-4 py-3 font-medium">
+                    Status
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-right font-medium sm:px-6">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {isLoading
+                  ? Array.from({ length: 4 }, (_, rowIndex) => (
+                      <tr key={rowIndex} className="border-t border-line">
+                        {Array.from({ length: 7 }, (_, cellIndex) => (
+                          <td key={cellIndex} className="px-4 py-4 sm:px-6">
+                            <div className="h-4 w-20 animate-pulse rounded bg-elevated" />
+                          </td>
+                        ))}
+                      </tr>
+                    ))
+                  : null}
+
+                {!isLoading && bookings.length === 0 ? (
+                  <tr className="border-t border-line">
+                    <td colSpan={7} className="px-6 py-16 text-center">
+                      <p className="font-display text-xl">No bookings yet</p>
+                      <p className="mt-2 text-sm text-muted">
+                        No reservations in the system.
+                      </p>
+                    </td>
+                  </tr>
+                ) : null}
+
+                {!isLoading
+                  ? bookings.map((booking) => {
+                      const guest = booking.user
+                      const room = booking.room
+                      const nights = countNights(booking.checkInDate, booking.checkOutDate)
+                      const totalPrice = Math.round(nights * room.pricePerNight * 100) / 100
+
+                      const statusBadge = STATUS_BADGES[booking.status] ?? {
+                        label: booking.status,
+                        className: 'bg-elevated text-muted',
+                      }
+
+                      const isCurrentUserGuest =
+                        guest?.email?.endsWith('.test') &&
+                        (guest.email.includes('guest') ||
+                          user?.role === 'guest')
+
+                      return (
+                        <tr
+                          key={booking._id}
+                          className="border-t border-line transition-colors hover:bg-elevated/40"
+                        >
+                          <td
+                            scope="row"
+                            className="px-4 py-4 font-medium whitespace-nowrap sm:px-6"
+                          >
+                            {guest?.name ?? '—'}
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            {room?.roomNumber ?? '—'}
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            {formatStayDate(booking.checkInDate)}
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            {formatStayDate(booking.checkOutDate)}
+                          </td>
+                          <td className="px-4 py-4 tabular-nums whitespace-nowrap">
+                            {formatPKR(totalPrice)}
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            <span
+                              className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${statusBadge.className}`}
+                            >
+                              {statusBadge.label}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4 text-right whitespace-nowrap sm:px-6">
+                            {isStaff ? (
+                              <div className="flex justify-end gap-1.5">
+                                <select
+                                  onChange={(e) => {
+                                    if (
+                                      window.confirm(
+                                        `Update ${booking.room?.roomNumber} booking to ${e.target.value}?`,
+                                      )
+                                    ) {
+                                      handleStatusUpdate(booking._id, e.target.value)
+                                    }
+                                  }}
+                                  value={booking.status}
+                                  className="rounded-lg border border-line px-2 py-1 text-xs font-semibold transition-colors"
+                                >
+                                  <option value="pending">pending</option>
+                                  <option value="confirmed">confirmed</option>
+                                  <option value="checked-in">checked-in</option>
+                                  <option value="checked-out">checked-out</option>
+                                  <option value="cancelled">cancelled</option>
+                                </select>
+                              </div>
+                            ) : null}
+                          </td>
+                        </tr>
+                      )
+                    })
+                  : null}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : null}
+
+      {/* ── Guest Booking Modal ─────────────────────────────────── */}
+      {guestModalRoom && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 sm:items-center">
+          <button
+            type="button"
+            onClick={closeGuestBooking}
+            aria-label="Close dialog"
+            className="fixed inset-0 bg-black/50"
+          />
+
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="guest-booking-modal-title"
+            className="relative my-8 w-full max-w-lg rounded-3xl border border-line bg-surface p-6 shadow-xl"
+          >
+            <p className="text-xs font-medium tracking-[0.18em] text-muted uppercase">
+              New booking
+            </p>
+            <h2 id="guest-booking-modal-title" className="mt-2 font-display text-2xl">
+              Book room {guestModalRoom.roomNumber}
+            </h2>
+
+            {guestModalError ? (
+              <p
+                role="alert"
+                className="mt-4 rounded-xl border border-danger/40 bg-danger-surface px-4 py-3 text-sm text-danger"
+              >
+                {guestModalError}
+              </p>
+            ) : null}
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                const form = new FormData(e.target)
+                const checkIn = form.get('checkIn')
+                const checkOut = form.get('checkOut')
+                handleGuestBookingSubmit({ checkIn, checkOut })
+              }}
+              className="mt-5 space-y-4"
+            >
+              <div>
+                <label htmlFor="checkIn" className="mb-1.5 block text-sm font-medium">
+                  Check-in date
+                </label>
+                <input
+                  id="checkIn"
+                  name="checkIn"
+                  type="date"
+                  required
+                  min={new Date().toISOString().slice(0, 10)}
+                  className="w-full rounded-xl border border-line-strong bg-canvas px-3.5 py-2.5 text-sm text-content transition-colors placeholder:text-muted focus:border-accent-strong"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="checkOut" className="mb-1.5 block text-sm font-medium">
+                  Check-out date
+                </label>
+                <input
+                  id="checkOut"
+                  name="checkOut"
+                  type="date"
+                  required
+                  min={new Date().toISOString().slice(0, 10)}
+                  className="w-full rounded-xl border border-line-strong bg-canvas px-3.5 py-2.5 text-sm text-content transition-colors placeholder:text-muted focus:border-accent-strong"
+                />
+              </div>
+
+              <div className="flex flex-col-reverse gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={closeGuestBooking}
+                  className="rounded-full border border-line-strong px-5 py-2.5 text-sm font-semibold transition-colors hover:bg-elevated"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-on-accent transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Book now
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
+      )}
+
+      {/* ── Rooms table ────────────────────────────────────────── */}
+      {isStaff ? (
         <div className="mt-8 overflow-hidden rounded-2xl border border-line bg-surface shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[44rem] text-left text-sm">
@@ -204,7 +452,7 @@ function Rooms() {
                     Type
                   </th>
                   <th scope="col" className="px-4 py-3 font-medium">
-                    Price
+                    Price (PKR)
                   </th>
                   <th scope="col" className="px-4 py-3 font-medium">
                     Status
@@ -212,11 +460,9 @@ function Rooms() {
                   <th scope="col" className="px-4 py-3 font-medium">
                     Amenities
                   </th>
-                  {canManage ? (
-                    <th scope="col" className="px-4 py-3 text-right font-medium sm:px-6">
-                      Actions
-                    </th>
-                  ) : null}
+                  <th scope="col" className="px-4 py-3 text-right font-medium sm:px-6">
+                    Actions
+                  </th>
                 </tr>
               </thead>
 
@@ -224,7 +470,7 @@ function Rooms() {
                 {isLoading
                   ? Array.from({ length: 4 }, (_, rowIndex) => (
                       <tr key={rowIndex} className="border-t border-line">
-                        {Array.from({ length: columnCount }, (_, cellIndex) => (
+                        {Array.from({ length: 6 }, (_, cellIndex) => (
                           <td key={cellIndex} className="px-4 py-4 sm:px-6">
                             <div className="h-4 w-20 animate-pulse rounded bg-elevated" />
                           </td>
@@ -235,22 +481,11 @@ function Rooms() {
 
                 {!isLoading && rooms.length === 0 ? (
                   <tr className="border-t border-line">
-                    <td colSpan={columnCount} className="px-6 py-16 text-center">
+                    <td colSpan={6} className="px-6 py-16 text-center">
                       <p className="font-display text-xl">No rooms yet</p>
                       <p className="mt-2 text-sm text-muted">
-                        {canManage
-                          ? 'Add the first room to start building the inventory.'
-                          : 'Rooms will appear here once staff add them.'}
+                        Add the first room to start building the inventory.
                       </p>
-                      {canManage ? (
-                        <button
-                          type="button"
-                          onClick={() => setModalRoom(null)}
-                          className="mt-5 rounded-full border border-line-strong px-5 py-2 text-sm font-semibold transition-colors hover:bg-elevated"
-                        >
-                          Add your first room
-                        </button>
-                      ) : null}
                     </td>
                   </tr>
                 ) : null}
@@ -275,7 +510,7 @@ function Rooms() {
                           </th>
                           <td className="px-4 py-4 whitespace-nowrap">{room.type}</td>
                           <td className="px-4 py-4 tabular-nums whitespace-nowrap">
-                            {priceFormatter.format(room.pricePerNight)}
+                            {formatPKR(room.pricePerNight)}
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap">
                             <span
@@ -300,27 +535,21 @@ function Rooms() {
                               <span className="text-muted">—</span>
                             )}
                           </td>
-                          {canManage ? (
-                            <td className="px-4 py-4 text-right whitespace-nowrap sm:px-6">
+                          <td className="px-4 py-4 text-right whitespace-nowrap sm:px-6">
+                            {isStaff ? (
                               <div className="flex justify-end gap-2">
                                 <button
                                   type="button"
-                                  onClick={() => setModalRoom(room)}
+                                  onClick={() => setGuestModalRoom(room)}
                                   className="rounded-lg border border-line-strong px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-elevated"
                                 >
-                                  Edit
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteRoom(room)}
-                                  disabled={deletingId === room._id}
-                                  className="rounded-lg border border-danger/40 px-3 py-1.5 text-xs font-semibold text-danger transition-colors hover:bg-danger-surface disabled:cursor-not-allowed disabled:opacity-60"
-                                >
-                                  {deletingId === room._id ? 'Deleting…' : 'Delete'}
+                                  Book
                                 </button>
                               </div>
-                            </td>
-                          ) : null}
+                            ) : (
+                              <span className="text-xs text-muted">—</span>
+                            )}
+                          </td>
                         </tr>
                       )
                     })
@@ -329,15 +558,6 @@ function Rooms() {
             </table>
           </div>
         </div>
-      )}
-
-      {modalRoom !== undefined ? (
-        <RoomFormModal
-          key={modalRoom?._id ?? 'new'}
-          room={modalRoom}
-          onClose={() => setModalRoom(undefined)}
-          onSubmit={handleSaveRoom}
-        />
       ) : null}
     </section>
   )
