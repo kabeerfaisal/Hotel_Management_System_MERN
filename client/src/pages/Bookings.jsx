@@ -252,11 +252,11 @@ function Bookings() {
                                 value={booking.status}
                                 className="rounded-lg border border-line px-2 py-1 text-xs font-semibold transition-colors"
                               >
-                                <option value="pending">pending</option>
-                                <option value="confirmed">confirmed</option>
-                                <option value="checked-in">checked-in</option>
-                                <option value="checked-out">checked-out</option>
-                                <option value="cancelled">cancelled</option>
+                                <option className='text-black' value="pending">pending</option>
+                                <option className='text-black' value="confirmed">confirmed</option>
+                                <option className='text-black' value="checked-in">checked-in</option>
+                                <option className='text-black' value="checked-out">checked-out</option>
+                                <option className='text-black' value="cancelled">cancelled</option>
                               </select>
                             </div>
                           </td>
