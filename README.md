@@ -47,7 +47,7 @@ scroll-triggered motion while keeping staff workflows untouched.
 | Frontend   | React 19, React Router                              |
 | Styling    | Tailwind CSS v4                                     |
 | Animation  | GSAP + ScrollTrigger                                |
-| Email      | Nodemailer over SMTP                                |
+| Email      | Brevo Transactional API + Nodemailer SMTP fallback  |
 | Auth       | JWT access tokens, bcrypt password hashing          |
 | Build/Tool | Vite, Nodemon, Oxlint                               |
 
@@ -123,8 +123,11 @@ Set the following values in `server/.env`:
 | `SMTP_USER`      | yes*     | SMTP username / sender account                   |
 | `SMTP_PASS`      | yes*     | SMTP password or Gmail App Password              |
 | `SMTP_FROM`      | no       | From header (default `LuxuryStay Hospitality <noreply@luxurystay.com>`) |
+| `BREVO_API_KEY`  | no       | Brevo Transactional Email API key (preferred)    |
 
-\* Required for password-reset and booking-confirmation emails. For Gmail, enable 2-Step
+\* Required for password-reset and booking-confirmation emails when `BREVO_API_KEY` is not set.
+When `BREVO_API_KEY` is present, mail is sent through the Brevo API using `SMTP_FROM` as the
+sender; otherwise the API falls back to Nodemailer over SMTP. For Gmail, enable 2-Step
 Verification and create an **App Password** — regular account passwords are rejected by SMTP.
 
 Generate a strong secret with:
@@ -162,9 +165,10 @@ Public registration creates **guest** accounts only. To access the staff portal,
 `admin` in MongoDB (for example with MongoDB Compass), then sign in at `/login`. Admins can create
 and manage the remaining staff accounts from the Users page.
 
-> Password-reset codes and booking invoices are delivered through Nodemailer using the SMTP
-> settings above. If SMTP credentials are missing, bookings still succeed and return
-> `emailSent: false`; reset delivery failures are logged without revealing account existence.
+> Password-reset codes and booking invoices are delivered through the Brevo API when
+> `BREVO_API_KEY` is set, and through Nodemailer/SMTP otherwise. Delivery attempts log a clear
+> `[Email]` line in the server console. If no provider is configured, bookings still succeed and
+> return `emailSent: false`; reset delivery failures are logged without revealing account existence.
 
 ---
 
