@@ -78,6 +78,7 @@ export function useHeroFadeUp(scopeRef) {
  * Pass a primitive renderKey (e.g. loading state + item count) so cards
  * animate again when async data arrives.
  */
+
 export function useStaggerReveal(scopeRef, renderKey = '') {
   useEffect(() => {
     const scope = scopeRef.current
@@ -86,6 +87,15 @@ export function useStaggerReveal(scopeRef, renderKey = '') {
     let cancelled = false
     let context
     let refreshTimer
+    let fallbackTimer
+
+    const revealImmediately = () => {
+      const items = scope.querySelectorAll('[data-reveal]')
+      items.forEach((el) => {
+        el.style.opacity = '1'
+        el.style.transform = 'none'
+      })
+    }
 
     loadGsap().then(({ gsap, ScrollTrigger }) => {
       if (cancelled) return
@@ -99,35 +109,62 @@ export function useStaggerReveal(scopeRef, renderKey = '') {
           return
         }
 
+        const rect = scope.getBoundingClientRect()
+        const alreadyInOrPastView = rect.top <= window.innerHeight * 0.92
+
+        if (alreadyInOrPastView) {
+          gsap.fromTo(
+            items,
+            { y: 20, opacity: 0.2 },
+            {
+              y: 0,
+              opacity: 1,
+              duration: 0.55,
+              ease: 'power3.out',
+              stagger: 0.08,
+              clearProps: 'opacity,transform',
+            }
+          )
+          return
+        }
+
         gsap.from(items, {
           y: 36,
           opacity: 0,
           duration: 0.7,
           ease: 'power3.out',
           stagger: 0.09,
-          // Hand the elements back to CSS once revealed so nothing can get
-          // stuck at opacity: 0 after a refresh or route change.
           clearProps: 'opacity,transform',
           scrollTrigger: {
             trigger: scope,
-            start: 'top 85%',
+            start: 'top 88%',
             once: true,
           },
         })
       }, scope)
 
-      // Recalculate trigger positions after mount, then again once async
-      // content (room cards, booking rows) has finished laying out.
       ScrollTrigger.refresh()
       refreshTimer = window.setTimeout(() => {
+        if (cancelled) return
         ScrollTrigger.refresh()
         window.dispatchEvent(new Event('luxurystay:scroll-ready'))
       }, 150)
+
+      fallbackTimer = window.setTimeout(() => {
+        if (!cancelled) {
+          revealImmediately()
+        }
+      }, 1800)
+    }).catch(() => {
+      if (!cancelled) {
+        revealImmediately()
+      }
     })
 
     return () => {
       cancelled = true
       window.clearTimeout(refreshTimer)
+      window.clearTimeout(fallbackTimer)
       context?.revert()
     }
   }, [scopeRef, renderKey])
