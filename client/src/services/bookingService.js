@@ -1,32 +1,35 @@
 import api from './api.js'
 
-/**
- * Create a booking for the signed-in guest.
- */
 export async function createBooking(data) {
   const { data: payload } = await api.post('/bookings', data)
   return payload.booking
 }
 
-/**
- * List every booking. Staff only.
- */
 export async function getAllBookings() {
   const { data } = await api.get('/bookings')
   return data.bookings
 }
 
-/**
- * Fetch bookings for the authenticated user.
- */
 export async function getMyBookings() {
   const { data } = await api.get('/bookings/me')
   return data.bookings
 }
 
-/**
- * Move a booking to a new status. Staff only.
- */
+export async function getRoomBookedDates(roomId) {
+  const { data } = await api.get(`/bookings/room/${roomId}/booked-dates`)
+  return data.bookedDates
+}
+
+export async function cancelBooking(id) {
+  const { data } = await api.patch(`/bookings/${id}/cancel`)
+  return data.booking
+}
+
+export async function getBookingInvoice(id) {
+  const { data } = await api.get(`/bookings/${id}/invoice`)
+  return data.invoice
+}
+
 export async function updateBookingStatus(id, status) {
   const { data } = await api.put(`/bookings/${id}/status`, { status })
   return data.booking

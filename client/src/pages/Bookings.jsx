@@ -1,14 +1,16 @@
-import { useEffect } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { useAuth } from '../context/AuthContext.jsx'
-import { formatPKR, formatStayDate, countNights } from '../utils/formatters.js'
-import { updateBookingStatus } from '../services/bookingService.js'
+import InvoiceModal from '../components/bookings/InvoiceModal.jsx'
+import { usePageFade } from '../hooks/useLuxuryAnimations.js'
+import { getAllBookings, updateBookingStatus } from '../services/bookingService.js'
+import { formatPKR, formatStayDate } from '../utils/formatters.js'
 
 const STATUS_COLOR_MAP = {
   pending: 'bg-warning-surface text-warning',
   confirmed: 'bg-success-surface text-success',
-  checked_in: 'bg-info-surface text-info',
-  checked_out: 'bg-muted text-muted',
+  'checked-in': 'bg-info-surface text-info',
+  'checked-out': 'bg-elevated text-muted',
   cancelled: 'bg-danger-surface text-danger',
 }
 
@@ -19,32 +21,29 @@ function Bookings() {
   const [bookings, setBookings] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
+  const [invoiceBookingId, setInvoiceBookingId] = useState(null)
+
+  const pageRef = useRef(null)
+  usePageFade(pageRef)
+
+  const load = useCallback(async () => {
+    try {
+      setBookings(await getAllBookings())
+      setError('')
+    } catch (requestError) {
+      setError(
+        requestError.response?.data?.message ??
+          'Unable to load bookings. Please try again.',
+      )
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
-    // Staff only — already gated by RoleRoute, but double-check
-    if (!isStaff) {
-      return
-    }
-
-    async function load() {
-      setIsLoading(true)
-      setError('')
-
-      try {
-        const bookings = await window.bookingService.getAllBookings()
-        setBookings(bookings)
-      } catch (requestError) {
-        setError(
-          requestError.response?.data?.message ??
-            'Unable to load bookings. Please try again.',
-        )
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
+    if (!isStaff) return
     load()
-  }, [isStaff])
+  }, [isStaff, load])
 
   const handleStatusUpdate = async (id, status) => {
     try {
@@ -63,7 +62,7 @@ function Bookings() {
   }
 
   return (
-    <section>
+    <section ref={pageRef}>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-xs font-medium tracking-[0.18em] text-muted uppercase">
@@ -86,7 +85,10 @@ function Bookings() {
           <p>{error}</p>
           <button
             type="button"
-            onClick={() => { setError(''); load() }}
+            onClick={() => {
+              setIsLoading(true)
+              load()
+            }}
             className="mt-3 rounded-full border border-danger/40 px-4 py-1.5 text-xs font-semibold transition-colors hover:bg-danger/10"
           >
             Try again
@@ -95,14 +97,14 @@ function Bookings() {
       ) : null}
 
       {isLoading ? (
-        <div className="mt-8 rounded-2xl border border-line bg-surface shadow-sm">
+        <div className="mt-8 rounded-2xl border border-stone-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <p className="p-4 text-sm text-muted">Loading reservations…</p>
         </div>
       ) : (
-        <div className="mt-8 overflow-hidden rounded-2xl border border-line bg-surface shadow-sm">
+        <div className="mt-8 overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[52rem] text-left text-sm">
-              <thead className="bg-elevated/60 text-xs tracking-[0.14em] text-muted uppercase">
+              <thead className="bg-elevated/60 text-xs tracking-[0.14em] text-muted uppercase dark:bg-slate-800/60 dark:text-slate-300">
                 <tr>
                   <th scope="col" className="px-4 py-3 font-medium sm:px-6">
                     Guest
@@ -131,10 +133,10 @@ function Bookings() {
               <tbody>
                 {isLoading
                   ? Array.from({ length: 4 }, (_, rowIndex) => (
-                      <tr key={rowIndex} className="border-t border-line">
+                      <tr key={rowIndex} className="border-t border-stone-200 dark:border-slate-800">
                         {Array.from({ length: 7 }, (_, cellIndex) => (
                           <td key={cellIndex} className="px-4 py-4 sm:px-6">
-                            <div className="h-4 w-20 animate-pulse rounded bg-elevated" />
+                            <div className="h-4 w-20 animate-pulse rounded bg-stone-200 dark:bg-slate-800" />
                           </td>
                         ))}
                       </tr>
@@ -142,7 +144,7 @@ function Bookings() {
                   : null}
 
                 {!isLoading && bookings.length === 0 ? (
-                  <tr className="border-t border-line">
+                  <tr className="border-t border-stone-200 dark:border-slate-800">
                     <td colSpan={7} className="px-6 py-16 text-center">
                       <p className="font-display text-xl">No bookings yet</p>
                       <p className="mt-2 text-sm text-muted">
@@ -156,18 +158,14 @@ function Bookings() {
                   ? bookings.map((booking) => {
                       const guest = booking.user
                       const room = booking.room
-                      const nights = countNights(
-                        booking.checkInDate,
-                        booking.checkOutDate,
-                      )
-                      const totalPrice = Math.round(nights * room.pricePerNight * 100) / 100
+                      const totalPrice = booking.totalPrice
 
                       const statusColor = STATUS_COLOR_MAP[booking.status] ?? 'bg-elevated text-muted'
 
                       return (
                         <tr
                           key={booking._id}
-                          className="border-t border-line transition-colors hover:bg-elevated/40"
+                          className="border-t border-stone-200 transition-colors hover:bg-stone-50 dark:border-slate-800 dark:hover:bg-slate-800/40"
                         >
                           <td
                             scope="row"
@@ -195,25 +193,34 @@ function Bookings() {
                             </span>
                           </td>
                           <td className="px-4 py-4 text-right whitespace-nowrap sm:px-6">
-                            <select
-                              onChange={(e) => {
-                                if (
-                                  window.confirm(
-                                    `Update booking ${booking.room?.roomNumber} to ${e.target.value}?`,
-                                  )
-                                ) {
-                                  handleStatusUpdate(booking._id, e.target.value)
-                                }
-                              }}
-                              value={booking.status}
-                              className="rounded-lg border border-line px-2 py-1 text-xs font-semibold transition-colors"
-                            >
-                              <option value="pending">pending</option>
-                              <option value="confirmed">confirmed</option>
-                              <option value="checked-in">checked-in</option>
-                              <option value="checked-out">checked-out</option>
-                              <option value="cancelled">cancelled</option>
-                            </select>
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setInvoiceBookingId(booking._id)}
+                                className="rounded-lg border border-line-strong px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-elevated"
+                              >
+                                View Invoice
+                              </button>
+                              <select
+                                onChange={(e) => {
+                                  if (
+                                    window.confirm(
+                                      `Update booking ${booking.room?.roomNumber} to ${e.target.value}?`,
+                                    )
+                                  ) {
+                                    handleStatusUpdate(booking._id, e.target.value)
+                                  }
+                                }}
+                                value={booking.status}
+                                className="rounded-lg border border-line px-2 py-1 text-xs font-semibold transition-colors"
+                              >
+                                <option value="pending">pending</option>
+                                <option value="confirmed">confirmed</option>
+                                <option value="checked-in">checked-in</option>
+                                <option value="checked-out">checked-out</option>
+                                <option value="cancelled">cancelled</option>
+                              </select>
+                            </div>
                           </td>
                         </tr>
                       )
@@ -224,6 +231,13 @@ function Bookings() {
           </div>
         </div>
       )}
+
+      {invoiceBookingId ? (
+        <InvoiceModal
+          bookingId={invoiceBookingId}
+          onClose={() => setInvoiceBookingId(null)}
+        />
+      ) : null}
     </section>
   )
 }

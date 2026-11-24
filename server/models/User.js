@@ -25,10 +25,21 @@ const userSchema = new mongoose.Schema(
       // Never returned by queries unless explicitly selected.
       select: false,
     },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
     phone: {
       type: String,
       trim: true,
+      default: '',
       maxlength: [20, 'Phone number cannot exceed 20 characters'],
+    },
+    preferences: {
+      type: String,
+      trim: true,
+      default: '',
+      maxlength: [500, 'Preferences cannot exceed 500 characters'],
     },
     role: {
       type: String,
@@ -37,6 +48,15 @@ const userSchema = new mongoose.Schema(
         message: 'Invalid role: {VALUE}',
       },
       default: 'guest',
+    },
+    // Hashed 6-digit password reset code. Never selected by default.
+    resetCode: {
+      type: String,
+      select: false,
+    },
+    resetCodeExpiresAt: {
+      type: Date,
+      select: false,
     },
   },
   { timestamps: true },

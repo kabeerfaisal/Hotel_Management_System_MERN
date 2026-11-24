@@ -34,6 +34,23 @@ const bookingSchema = new mongoose.Schema(
         message: 'Check-out date must be after the check-in date',
       },
     },
+    numberOfGuests: {
+      type: Number,
+      required: [true, 'Number of guests is required'],
+      min: [1, 'Number of guests must be at least 1'],
+    },
+    contactPhone: {
+      type: String,
+      required: [true, 'Contact phone is required'],
+      trim: true,
+      maxlength: [20, 'Contact phone cannot exceed 20 characters'],
+    },
+    specialRequests: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: [500, 'Special requests cannot exceed 500 characters'],
+    },
     totalPrice: {
       type: Number,
       required: [true, 'Total price is required'],

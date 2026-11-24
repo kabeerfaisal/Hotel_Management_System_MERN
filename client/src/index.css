@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 /*
  * Design tokens — two tiers:
  *   1. Literal values (--lux-*)
@@ -32,7 +34,7 @@
 
 @layer base {
   :root {
-    color-scheme: light dark;
+    color-scheme: light;
 
     /* Light: warm ivory, ink, antique gold */
     --lux-canvas: oklch(0.972 0.008 85);
@@ -54,34 +56,34 @@
     --lux-info: oklch(0.45 0.09 240);
     --lux-info-surface: oklch(0.95 0.03 240);
 
-    --lux-font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI",
-      Roboto, "Helvetica Neue", Arial, sans-serif;
-    --lux-font-display: "Iowan Old Style", "Palatino Linotype", Palatino,
-      "Book Antiqua", Georgia, serif;
+    --lux-font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system,
+      "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --lux-font-display: "Playfair Display", "Iowan Old Style", "Palatino Linotype",
+      Palatino, "Book Antiqua", Georgia, serif;
   }
 
-  @media (prefers-color-scheme: dark) {
-    :root {
-      /* Dark: charcoal, warm white, lit gold */
-      --lux-canvas: oklch(0.18 0.012 60);
-      --lux-surface: oklch(0.22 0.012 60);
-      --lux-elevated: oklch(0.26 0.012 60);
-      --lux-content: oklch(0.95 0.01 85);
-      --lux-muted: oklch(0.74 0.012 85);
-      --lux-accent: oklch(0.8 0.12 82);
-      --lux-accent-strong: oklch(0.86 0.1 85);
-      --lux-on-accent: oklch(0.22 0.02 60);
-      --lux-line: oklch(0.34 0.012 60);
-      --lux-line-strong: oklch(0.62 0.012 70);
-      --lux-danger: oklch(0.75 0.15 25);
-      --lux-danger-surface: oklch(0.28 0.06 25);
-      --lux-success: oklch(0.8 0.13 150);
-      --lux-success-surface: oklch(0.28 0.06 150);
-      --lux-warning: oklch(0.85 0.12 85);
-      --lux-warning-surface: oklch(0.3 0.06 80);
-      --lux-info: oklch(0.8 0.09 240);
-      --lux-info-surface: oklch(0.29 0.05 240);
-    }
+  .dark {
+    color-scheme: dark;
+
+    /* Dark: deep obsidian slate, warm white, lit champagne gold */
+    --lux-canvas: oklch(0.145 0.012 250);
+    --lux-surface: oklch(0.19 0.014 250);
+    --lux-elevated: oklch(0.24 0.014 250);
+    --lux-content: oklch(0.95 0.012 85);
+    --lux-muted: oklch(0.72 0.012 85);
+    --lux-accent: oklch(0.79 0.12 82);
+    --lux-accent-strong: oklch(0.84 0.11 85);
+    --lux-on-accent: oklch(0.2 0.02 60);
+    --lux-line: oklch(0.3 0.014 250);
+    --lux-line-strong: oklch(0.55 0.02 85);
+    --lux-danger: oklch(0.75 0.15 25);
+    --lux-danger-surface: oklch(0.28 0.06 25);
+    --lux-success: oklch(0.8 0.13 150);
+    --lux-success-surface: oklch(0.28 0.06 150);
+    --lux-warning: oklch(0.85 0.12 85);
+    --lux-warning-surface: oklch(0.3 0.06 80);
+    --lux-info: oklch(0.8 0.09 240);
+    --lux-info-surface: oklch(0.29 0.05 240);
   }
 
   html {
@@ -91,6 +93,16 @@
 
   body {
     @apply bg-canvas font-sans text-content antialiased;
+    transition:
+      background-color 300ms ease,
+      color 300ms ease;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--lux-font-display);
   }
 
   ::selection {
@@ -107,5 +119,16 @@
     html {
       scroll-behavior: auto;
     }
+  }
+
+  /* Keep scroll gestures inside an open modal from moving the page behind it. */
+  dialog:modal {
+    overscroll-behavior: contain;
+  }
+
+  dialog::backdrop {
+    overflow: hidden;
+    overscroll-behavior: contain;
+    background-color: rgb(0 0 0 / 0.5);
   }
 }

@@ -1,124 +1,139 @@
 # LuxuryStay Hospitality — Hotel Management System
 
-An industry-grade, full-stack **MERN** hotel management platform for reservations, rooms,
-guests, billing, and staff operations.
+A full-stack **MERN** hotel management platform built by **Kabeer Faisal** for LuxuryStay
+Hospitality. It pairs a five-star guest concierge experience with a role-aware staff console
+for reservations, rooms, billing, service requests, feedback, and hotel settings.
 
-> **Status:** Foundation scaffold. The repository structure, tooling, and core stack are in
-> place; product modules are built incrementally with small, reviewable commits.
+---
+
+## Overview
+
+LuxuryStay is split into two experiences behind one authentication layer:
+
+- **Guest Concierge** — visitors can browse suites and experiences before signing in. Registered
+  guests can reserve rooms with live availability previews, track upcoming stays, cancel eligible
+  reservations, download printable PKR invoices, request concierge services, and leave feedback.
+- **Staff Portal** — admins, managers, receptionists, and housekeeping staff get a dedicated
+  console for the reservation book, room inventory, guest service queues, feedback moderation,
+  user administration, and hotel configuration.
+
+Public editorial pages (`/experiences`, `/our-story`, `/support`) use deep-link anchors and
+scroll-triggered motion while keeping staff workflows untouched.
+
+### Key highlights
+
+- **Role-based access** — `guest`, `admin`, `manager`, `receptionist`, and `housekeeping` roles
+  with guarded routes and API authorization.
+- **PKR billing & printable invoices** — nightly room charges, billable services, tax, and grand
+  totals in Pakistani Rupees, with a print-ready invoice layout.
+- **Automated room status sync** — check-in marks a room occupied, check-out moves it to cleaning,
+  completing a housekeeping request returns it to available, and cancellation releases booking dates.
+- **Guest self-service** — `/my-reservations` with All / Upcoming / Completed / Cancelled filters and
+  self-cancel for pending or confirmed bookings.
+- **Live availability preview** — the booking dialog lists blocked date ranges before a guest submits.
+- **Dark / light theme** — persisted appearance preference across guest and staff areas.
+- **GSAP animations** — hero fades, staggered scroll reveals, and subtle hover lifts, scoped and
+  cleaned up with `gsap.context()` so route changes stay smooth.
+- **Accessible forms** — labelled inputs, keyboard-friendly dialogs, and show/hide password toggles.
 
 ---
 
 ## Tech Stack
 
-| Layer      | Technology                                                                 |
-| ---------- | -------------------------------------------------------------------------- |
-| **Client** | React 19 (Vite), Tailwind CSS v4, modern Hooks-only functional components   |
-| **Server** | Node.js, Express 5, Mongoose (MongoDB)                                     |
-| **Auth**   | JWT access tokens, bcrypt password hashing                                 |
-| **Tooling**| Vite, Nodemon, Oxlint, Git (Conventional Commits)                          |
-
-### Deliberate choices
-
-- **Vite, not Create React App.** CRA is unmaintained; Vite provides instant HMR and a lean build.
-- **Tailwind CSS v4** via the first-party `@tailwindcss/vite` plugin — no PostCSS config boilerplate.
-- **Hooks only.** No legacy class components anywhere in `client/`.
-- **Strict server modularity.** Routes, controllers, models, and middleware never share a file.
+| Layer      | Technology                                          |
+| ---------- | --------------------------------------------------- |
+| Database   | MongoDB with Mongoose                               |
+| Backend    | Node.js, Express.js                                 |
+| Frontend   | React 19, React Router                              |
+| Styling    | Tailwind CSS v4                                     |
+| Animation  | GSAP + ScrollTrigger                                |
+| Auth       | JWT access tokens, bcrypt password hashing          |
+| Build/Tool | Vite, Nodemon, Oxlint                               |
 
 ---
 
-## Repository Layout
+## Project Structure
 
 ```text
 Hotel_Management_System_MERN/
-├── client/                     # React front end (Vite)
-│   ├── public/
+├── client/                         # React front end (Vite)
 │   ├── src/
-│   │   ├── assets/             # Images, icons, fonts
-│   │   ├── components/         # Shared UI, ProtectedRoute, layout/ shell
-│   │   ├── config/             # Constants (API base URL, storage keys)
-│   │   ├── context/            # AuthContext + useAuth hook
-│   │   ├── hooks/              # Custom React hooks
-│   │   ├── pages/              # Route-level views (Home, Login, Register, …)
-│   │   ├── routes/             # AppRoutes — the single route table
-│   │   ├── services/           # Axios instance + feature API modules
+│   │   ├── components/             # Auth, booking, guest, layout, and room UI
+│   │   ├── config/                 # Developer credit and shared constants
+│   │   ├── context/                # Auth and theme providers
+│   │   ├── hooks/                  # GSAP animation hooks
+│   │   ├── pages/                  # Home, Rooms, Bookings, MyReservations, Support, …
+│   │   ├── routes/                 # Route table and role guards
+│   │   ├── services/               # Axios client and feature API modules
 │   │   ├── App.jsx
-│   │   ├── index.css           # Tailwind entry + design tokens
-│   │   └── main.jsx
-│   ├── index.html
-│   └── vite.config.js
+│   │   └── index.css               # Tailwind entry + design tokens
+│   └── vite.config.js              # Dev server and API proxy
 │
-├── server/                     # Express API
-│   ├── config/
-│   │   └── db.js               # MongoDB connection
-│   ├── controllers/            # Request handlers (added with each feature)
-│   ├── middleware/             # Auth, validation, error handling
-│   ├── models/                 # Mongoose schemas
-│   ├── routes/                 # Express routers
-│   ├── server.js               # Express app + process entry point
-│   ├── .env.example            # Committed template
-│   └── package.json
+├── server/                         # Express REST API
+│   ├── config/db.js                # MongoDB connection
+│   ├── controllers/                # Auth, bookings, rooms, users, services, feedback
+│   ├── middleware/                 # JWT protect + role authorize
+│   ├── models/                     # Mongoose schemas and indexes
+│   ├── routes/                     # Express routers
+│   ├── seedRooms.js                # Signature room seeding
+│   ├── server.js                   # App and process entry point
+│   └── .env.example                # Environment template
 │
 ├── .gitignore
 └── README.md
 ```
 
-### Architectural rules
-
-1. **One responsibility per file.** A route file wires URLs to controller functions only.
-2. **Controllers own orchestration.** They validate input, call models, and shape responses.
-3. **Models own schema + data rules.** Validation, indexes, and instance methods live here.
-4. **Middleware is cross-cutting.** Authentication, authorization, error handling, rate limits.
-5. **No secrets in code.** Every credential comes from `process.env`.
-
 ---
 
-## Getting Started
+## Quick Local Setup
 
 ### Prerequisites
 
-- Node.js **20+**
-- npm **10+**
-- A MongoDB connection string (local MongoDB or MongoDB Atlas)
+- Node.js **20+** and npm **10+**
+- MongoDB running locally, or a MongoDB Atlas connection string
 
-### 1. Clone & install
+### 1. Install dependencies
 
 ```bash
-git clone <repository-url>
-cd Hotel_Management_System_MERN
-
-# Client
 cd client
 npm install
 
-# Server
 cd ../server
 npm install
 ```
 
-### 2. Configure environment variables
+### 2. Configure the API environment
 
 ```bash
 cd server
 cp .env.example .env
 ```
 
-Then edit `server/.env` with your own values. **Never commit `.env`.**
+Set the following values in `server/.env`:
 
 | Variable         | Required | Description                                      |
 | ---------------- | -------- | ------------------------------------------------ |
-| `NODE_ENV`       | yes      | `development` \| `production`                     |
-| `PORT`           | no       | API port (default `5000`)                         |
-| `MONGO_URI`      | yes      | MongoDB connection string                         |
-| `JWT_SECRET`     | yes      | Long random string used to sign access tokens     |
-| `JWT_EXPIRES_IN` | no       | Token lifetime, e.g. `7d`                         |
+| `MONGO_URI`      | yes      | MongoDB connection string                        |
+| `PORT`           | no       | API port (default `5000`)                        |
+| `JWT_SECRET`     | yes      | Long random string used to sign access tokens    |
+| `JWT_EXPIRES_IN` | no       | Token lifetime, for example `7d`                 |
 
-Generate a strong JWT secret:
+Generate a strong secret with:
 
 ```bash
 node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
 ```
 
-### 3. Run in development
+### 3. Seed the room collection
+
+```bash
+cd server
+npm run seed:rooms
+```
+
+Seeding is idempotent: rooms are matched by room number, so re-running never overwrites staff edits.
+
+### 4. Start both apps
 
 ```bash
 # Terminal 1 — API on http://localhost:5000
@@ -130,7 +145,55 @@ cd client
 npm run dev
 ```
 
-The Vite dev server proxies API requests so the browser talks to one origin.
+The Vite dev server proxies `/api` requests to the Express server, so the browser uses one origin.
+
+### First admin account
+
+Public registration creates **guest** accounts only. To access the staff portal, promote a user to
+`admin` in MongoDB (for example with MongoDB Compass), then sign in at `/login`. Admins can create
+and manage the remaining staff accounts from the Users page.
+
+> The local demo returns password-reset codes as `devResetCode` in the API response. Wire a real
+> email provider before deploying to production.
+
+---
+
+## Core API Endpoints
+
+All protected routes expect `Authorization: Bearer <token>`. Roles are enforced in middleware.
+
+| Method   | Endpoint                                 | Access                         | Purpose                              |
+| -------- | ---------------------------------------- | ------------------------------ | ------------------------------------ |
+| `GET`    | `/api`                                   | Public                         | Health check                         |
+| `POST`   | `/api/auth/register`                     | Public                         | Create a guest account               |
+| `POST`   | `/api/auth/login`                        | Public                         | Sign in and receive a JWT            |
+| `POST`   | `/api/auth/forgot-password`              | Public                         | Request a 6-digit reset code         |
+| `POST`   | `/api/auth/reset-password`               | Public                         | Set a new password with the code     |
+| `GET`    | `/api/auth/me`                           | Authenticated                  | Current user profile                 |
+| `GET`    | `/api/rooms`                             | Public                         | Browse the suite collection          |
+| `GET`    | `/api/rooms/:id`                         | Authenticated                  | Room details                         |
+| `POST`   | `/api/rooms`                             | Admin, manager                 | Create a room                        |
+| `PUT`    | `/api/rooms/:id`                         | Admin, manager                 | Update a room                        |
+| `DELETE` | `/api/rooms/:id`                         | Admin, manager                 | Delete a room                        |
+| `POST`   | `/api/bookings`                          | Authenticated                  | Reserve a room                       |
+| `GET`    | `/api/bookings/me`                       | Authenticated                  | Own reservations                     |
+| `GET`    | `/api/bookings`                          | Staff                          | Full reservation book                |
+| `GET`    | `/api/bookings/room/:roomId/booked-dates`| Public                         | Blocked date ranges for a room       |
+| `GET`    | `/api/bookings/:id/invoice`              | Owner guest or staff           | Invoice with charges, tax, total     |
+| `PATCH`  | `/api/bookings/:id/cancel`               | Owner guest or staff           | Cancel a pending/confirmed booking   |
+| `PUT`    | `/api/bookings/:id/status`               | Staff                          | Update booking lifecycle status      |
+| `GET`    | `/api/dashboard`                         | Staff                          | Occupancy, revenue, and alerts       |
+| `GET`    | `/api/users`                             | Admin                          | List users                           |
+| `POST`   | `/api/users`                             | Admin                          | Create a staff or guest account      |
+| `PUT`    | `/api/users/:id`                         | Admin                          | Update a user                        |
+| `PATCH`  | `/api/users/:id/status`                  | Admin                          | Activate or deactivate a user        |
+| `GET`    | `/api/service-requests`                  | Authenticated                  | Own requests, or all for staff       |
+| `POST`   | `/api/service-requests`                  | Authenticated                  | Request a concierge service          |
+| `PATCH`  | `/api/service-requests/:id`              | Staff                          | Update status, priority, or charge   |
+| `GET`    | `/api/feedback`                          | Authenticated                  | Own feedback, or all for staff       |
+| `POST`   | `/api/feedback`                          | Authenticated                  | Submit a review                      |
+| `GET`    | `/api/settings`                          | Authenticated                  | Hotel configuration                  |
+| `PUT`    | `/api/settings`                          | Admin                          | Update hotel configuration           |
 
 ---
 
@@ -138,77 +201,34 @@ The Vite dev server proxies API requests so the browser talks to one origin.
 
 ### `client/`
 
-| Script            | Purpose                          |
-| ----------------- | -------------------------------- |
-| `npm run dev`     | Start Vite dev server with HMR   |
-| `npm run build`   | Production build into `dist/`    |
-| `npm run preview` | Preview the production build     |
-| `npm run lint`    | Run Oxlint                       |
+| Script            | Purpose                        |
+| ----------------- | ------------------------------ |
+| `npm run dev`     | Start Vite with HMR            |
+| `npm run build`   | Production build into `dist/`  |
+| `npm run preview` | Preview the production build   |
+| `npm run lint`    | Run Oxlint                     |
 
 ### `server/`
 
-| Script        | Purpose                               |
-| ------------- | ------------------------------------- |
-| `npm run dev` | Start Nodemon with hot reload         |
-| `npm start`   | Start with plain Node (production)    |
+| Script              | Purpose                          |
+| ------------------- | -------------------------------- |
+| `npm run dev`       | Start Nodemon with hot reload    |
+| `npm start`         | Start with plain Node            |
+| `npm run seed:rooms`| Seed the signature room catalog  |
 
 ---
 
-## Security Baseline
+## Security Notes
 
-- All secrets live in `server/.env`; only `server/.env.example` is committed.
-- `.env`, `.env.*`, and `node_modules/` are ignored at the **repository root** so nested
-  packages cannot accidentally commit them.
-- Passwords are hashed with bcrypt; plaintext passwords are never stored or logged.
-- JWTs are signed with a server-only secret and validated by auth middleware.
-- CORS is restricted to the configured client origin in production.
-
-If a secret is ever committed, rotate it immediately — removing the commit is not enough.
+- Secrets live only in `server/.env`; `.env`, `node_modules/`, and `dist/` are git-ignored.
+- Passwords are hashed with bcrypt and never returned by the API.
+- JWTs are signed with a server-only secret and validated on every protected request.
+- Role checks are applied server-side in addition to client-side route guards.
 
 ---
 
-## Git Workflow
+## Author
 
-This project uses **Conventional Commits**:
+**Kabeer Faisal** — LuxuryStay Hospitality
 
-```text
-feat:     a new feature
-fix:      a bug fix
-chore:    tooling, dependencies, configuration
-docs:     documentation only
-refactor: code change that neither fixes a bug nor adds a feature
-test:     adding or correcting tests
-perf:     performance improvement
-style:    formatting only
-```
-
-Examples:
-
-```text
-feat(rooms): add availability search endpoint
-fix(auth): reject expired refresh tokens
-chore: add tailwind config
-```
-
-Each functional milestone lands as its own small commit so history stays bisectable and
-reviewable.
-
----
-
-## Roadmap
-
-- [x] Repository foundation, tooling, and documentation
-- [x] Express modular scaffold with MongoDB connection
-- [x] Tailwind theme and client app shell
-- [ ] Authentication & role-based access (guest, staff, admin)
-- [ ] Room inventory & availability management
-- [ ] Reservations and booking lifecycle
-- [ ] Guest profiles and check-in / check-out
-- [ ] Billing, invoices, and payments
-- [ ] Admin dashboard and reporting
-
----
-
-## License
-
-Proprietary — © LuxuryStay Hospitality. All rights reserved.
+© 2026 LuxuryStay Hospitality. All rights reserved.

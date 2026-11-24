@@ -19,7 +19,6 @@ export function AuthProvider({ children }) {
   // Restore the session on a full page reload using the stored token.
   useEffect(() => {
     if (!localStorage.getItem(TOKEN_STORAGE_KEY)) {
-      // No token: isInitializing was already initialized to false.
       return undefined
     }
 

@@ -4,6 +4,7 @@ const ROOM_FIELDS = [
   'roomNumber',
   'type',
   'pricePerNight',
+  'capacity',
   'status',
   'amenities',
   'description',
@@ -68,10 +69,6 @@ function sendRoomError(res, error, fallbackMessage) {
   return res.status(500).json({ success: false, message: fallbackMessage })
 }
 
-/**
- * GET /api/rooms
- * List every room. Requires authentication.
- */
 export async function getRooms(req, res) {
   try {
     const rooms = await Room.find().sort({ roomNumber: 1 })
@@ -86,10 +83,6 @@ export async function getRooms(req, res) {
   }
 }
 
-/**
- * GET /api/rooms/:id
- * Load a single room. Requires authentication.
- */
 export async function getRoomById(req, res) {
   try {
     const room = await Room.findById(req.params.id)
@@ -104,10 +97,6 @@ export async function getRoomById(req, res) {
   }
 }
 
-/**
- * POST /api/rooms
- * Create a room. Admin and manager only.
- */
 export async function createRoom(req, res) {
   try {
     const fields = pickRoomFields(req.body)
@@ -128,10 +117,6 @@ export async function createRoom(req, res) {
   }
 }
 
-/**
- * PUT /api/rooms/:id
- * Replace the editable room fields. Admin and manager only.
- */
 export async function updateRoom(req, res) {
   try {
     const fields = pickRoomFields(req.body)
@@ -166,10 +151,6 @@ export async function updateRoom(req, res) {
   }
 }
 
-/**
- * DELETE /api/rooms/:id
- * Remove a room. Admin and manager only.
- */
 export async function deleteRoom(req, res) {
   try {
     const room = await Room.findByIdAndDelete(req.params.id)
