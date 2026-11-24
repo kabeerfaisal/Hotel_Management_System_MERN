@@ -1,4 +1,4 @@
-# LuxuryStay Hospitality — Hotel Management System
+# LuxuryStay — Hotel Management System
 
 A full-stack **MERN** hotel management platform built by **Abdul Kabeer & his Team** for LuxuryStay
 Hospitality. It pairs a five-star guest concierge experience with a role-aware staff console
