@@ -1,9 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
 
 import { useAuth } from '../context/AuthContext.jsx'
 import InvoiceModal from '../components/bookings/InvoiceModal.jsx'
 import { usePageFade } from '../hooks/useLuxuryAnimations.js'
-import { getAllBookings, updateBookingStatus } from '../services/bookingService.js'
+import {
+  getAllBookings,
+  reviewStayChangeRequest,
+  updateBookingStatus,
+} from '../services/bookingService.js'
 import { formatPKR, formatStayDate } from '../utils/formatters.js'
 
 const STATUS_COLOR_MAP = {
@@ -21,7 +25,9 @@ function Bookings() {
   const [bookings, setBookings] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
   const [invoiceBookingId, setInvoiceBookingId] = useState(null)
+  const [reviewingId, setReviewingId] = useState(null)
 
   const pageRef = useRef(null)
   usePageFade(pageRef)
@@ -54,6 +60,27 @@ function Bookings() {
         requestError.response?.data?.message ??
           'Unable to update booking status. Please try again.',
       )
+    }
+  }
+
+  const handleStayRequest = async (id, action) => {
+    setReviewingId(id)
+    setError('')
+    setNotice('')
+
+    try {
+      await reviewStayChangeRequest(id, action)
+      setNotice(
+        `Stay change request ${action === 'approve' ? 'approved' : 'rejected'}.`,
+      )
+      await load()
+    } catch (requestError) {
+      setError(
+        requestError.response?.data?.message ??
+          'Unable to review the stay change request. Please try again.',
+      )
+    } finally {
+      setReviewingId(null)
     }
   }
 
@@ -94,6 +121,15 @@ function Bookings() {
             Try again
           </button>
         </div>
+      ) : null}
+
+      {notice ? (
+        <p
+          role="status"
+          className="mt-6 rounded-2xl border border-success/30 bg-success-surface px-4 py-3 text-sm text-success"
+        >
+          {notice}
+        </p>
       ) : null}
 
       {isLoading ? (
@@ -161,12 +197,14 @@ function Bookings() {
                       const totalPrice = booking.totalPrice
 
                       const statusColor = STATUS_COLOR_MAP[booking.status] ?? 'bg-elevated text-muted'
+                      const stayChange = booking.stayChangeRequest
+                      const hasPendingStayChange =
+                        booking.status === 'checked-in' &&
+                        stayChange?.status === 'pending'
 
                       return (
-                        <tr
-                          key={booking._id}
-                          className="border-t border-stone-200 transition-colors hover:bg-stone-50 dark:border-slate-800 dark:hover:bg-slate-800/40"
-                        >
+                        <Fragment key={booking._id}>
+                          <tr className="border-t border-stone-200 transition-colors hover:bg-stone-50 dark:border-slate-800 dark:hover:bg-slate-800/40">
                           <td
                             scope="row"
                             className="px-4 py-4 font-medium whitespace-nowrap sm:px-6"
@@ -223,6 +261,69 @@ function Bookings() {
                             </div>
                           </td>
                         </tr>
+
+                        {hasPendingStayChange ? (
+                          <tr className="border-t border-amber-500/30 bg-amber-50/70 dark:border-amber-500/20 dark:bg-amber-500/5">
+                            <td colSpan={7} className="px-4 py-4 sm:px-6">
+                              <div className="flex flex-wrap items-start justify-between gap-4">
+                                <div className="text-sm">
+                                  <p className="text-xs font-semibold tracking-[0.14em] text-amber-700 uppercase dark:text-amber-400">
+                                    Stay change request
+                                  </p>
+                                  <p className="mt-1 font-medium">
+                                    Requested check-out:{' '}
+                                    {formatStayDate(
+                                      stayChange.requestedCheckOutDate,
+                                    )}
+                                  </p>
+                                  {stayChange.requestedCheckInDate ? (
+                                    <p className="mt-0.5 text-xs text-muted">
+                                      Requested check-in:{' '}
+                                      {formatStayDate(
+                                        stayChange.requestedCheckInDate,
+                                      )}
+                                    </p>
+                                  ) : null}
+                                  {stayChange.note ? (
+                                    <p className="mt-1 text-muted">
+                                      Note: {stayChange.note}
+                                    </p>
+                                  ) : null}
+                                  <p className="mt-1 text-xs text-muted">
+                                    Requested{' '}
+                                    {formatStayDate(stayChange.requestedAt)}
+                                  </p>
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleStayRequest(booking._id, 'approve')
+                                    }
+                                    disabled={reviewingId === booking._id}
+                                    className="rounded-full border border-success/40 px-4 py-1.5 text-xs font-semibold text-success transition-colors hover:bg-success-surface disabled:cursor-not-allowed disabled:opacity-60"
+                                  >
+                                    {reviewingId === booking._id
+                                      ? 'Saving…'
+                                      : 'Approve'}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleStayRequest(booking._id, 'reject')
+                                    }
+                                    disabled={reviewingId === booking._id}
+                                    className="rounded-full border border-danger/40 px-4 py-1.5 text-xs font-semibold text-danger transition-colors hover:bg-danger/10 disabled:cursor-not-allowed disabled:opacity-60"
+                                  >
+                                    Reject
+                                  </button>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        ) : null}
+                        </Fragment>
                       )
                     })
                   : null}

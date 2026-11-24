@@ -34,3 +34,13 @@ export async function updateBookingStatus(id, status) {
   const { data } = await api.put(`/bookings/${id}/status`, { status })
   return data.booking
 }
+
+export async function updateBookingDates(id, payload) {
+  const { data } = await api.patch(`/bookings/${id}/dates`, payload)
+  return data.booking
+}
+
+export async function reviewStayChangeRequest(id, action) {
+  const { data } = await api.patch(`/bookings/${id}/stay-request`, { action })
+  return data.booking
+}

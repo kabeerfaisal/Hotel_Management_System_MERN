@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import InvoiceModal from '../components/bookings/InvoiceModal.jsx'
+import BookingDatesModal from '../components/bookings/BookingDatesModal.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import {
   useHeroFadeUp,
@@ -34,6 +35,21 @@ const STATUS_BADGES = {
 
 const CANCELLABLE_STATUSES = ['pending', 'confirmed']
 
+const STAY_CHANGE_BADGES = {
+  pending: {
+    label: 'Stay change pending',
+    className: 'bg-warning-surface text-warning',
+  },
+  approved: {
+    label: 'Stay change approved',
+    className: 'bg-success-surface text-success',
+  },
+  rejected: {
+    label: 'Stay change rejected',
+    className: 'bg-danger-surface text-danger',
+  },
+}
+
 function bookingReference(id) {
   return `#${String(id).slice(-8).toUpperCase()}`
 }
@@ -48,6 +64,7 @@ function MyReservations() {
   const [activeFilter, setActiveFilter] = useState('all')
   const [invoiceBookingId, setInvoiceBookingId] = useState(null)
   const [cancellingId, setCancellingId] = useState(null)
+  const [datesModal, setDatesModal] = useState(null)
 
   const pageRef = useRef(null)
 
@@ -128,6 +145,20 @@ function MyReservations() {
     } finally {
       setCancellingId(null)
     }
+  }
+
+  const handleDatesSaved = (updated) => {
+    const reference = bookingReference(updated._id)
+
+    setBookings((previous) =>
+      previous.map((item) => (item._id === updated._id ? updated : item)),
+    )
+    setNotice(
+      updated.stayChangeRequest?.status === 'pending'
+        ? `Stay change request for ${reference} has been submitted for review.`
+        : `Reservation ${reference} dates have been updated.`,
+    )
+    setDatesModal(null)
   }
 
   return (
@@ -263,6 +294,17 @@ function MyReservations() {
             const nights = countNights(booking.checkInDate, booking.checkOutDate)
             const isCancelling = cancellingId === booking._id
             const canCancel = CANCELLABLE_STATUSES.includes(booking.status)
+            const stayChange = booking.stayChangeRequest
+            const stayBadge =
+              stayChange && stayChange.status !== 'none'
+                ? STAY_CHANGE_BADGES[stayChange.status]
+                : null
+            const canEditDates = ['pending', 'confirmed'].includes(
+              booking.status,
+            )
+            const canRequestStayChange =
+              booking.status === 'checked-in' &&
+              stayChange?.status !== 'pending'
 
             return (
               <article
@@ -280,13 +322,21 @@ function MyReservations() {
                       {bookingReference(booking._id)}
                     </p>
                   </div>
-                  <span
-                    className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${status.className}`}
-                  >
-                    {status.label}
-                  </span>
+                  <div className="flex flex-col items-end gap-2">
+                    <span
+                      className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${status.className}`}
+                    >
+                      {status.label}
+                    </span>
+                    {stayBadge ? (
+                      <span
+                        className={`inline-flex rounded-full px-3 py-1 text-[0.65rem] font-semibold ${stayBadge.className}`}
+                      >
+                        {stayBadge.label}
+                      </span>
+                    ) : null}
+                  </div>
                 </div>
-
                 <div className="mt-4 border-t border-stone-200 pt-4 dark:border-slate-800">
                   <p className="font-display text-2xl">
                     {room.type ?? 'Suite'}
@@ -336,9 +386,24 @@ function MyReservations() {
                   <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
                     {nights} {nights === 1 ? 'night' : 'nights'} · {room.type ?? 'Suite'}
                   </p>
+
+                  {stayChange && stayChange.status !== 'none' ? (
+                    <div className="mt-3 rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">
+                      <p className="font-semibold text-slate-700 dark:text-slate-200">
+                        Stay change {stayChange.status}
+                      </p>
+                      <p className="mt-1">
+                        Requested check-out:{' '}
+                        {formatStayDate(stayChange.requestedCheckOutDate)}
+                      </p>
+                      {stayChange.note ? (
+                        <p className="mt-1">Note: {stayChange.note}</p>
+                      ) : null}
+                    </div>
+                  ) : null}
                 </div>
 
-                <div className="mt-auto flex flex-col gap-2 pt-6 sm:flex-row">
+                <div className="mt-auto flex flex-col gap-2 pt-6 sm:flex-row sm:flex-wrap">
                   <button
                     type="button"
                     onClick={() => setInvoiceBookingId(booking._id)}
@@ -346,6 +411,28 @@ function MyReservations() {
                   >
                     View / Print Invoice
                   </button>
+                  {canEditDates ? (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setDatesModal({ booking, mode: 'edit' })
+                      }
+                      className="flex-1 rounded-full bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-amber-700 dark:bg-amber-500 dark:text-slate-950 dark:hover:bg-amber-400"
+                    >
+                      Edit Dates
+                    </button>
+                  ) : null}
+                  {canRequestStayChange ? (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setDatesModal({ booking, mode: 'request' })
+                      }
+                      className="flex-1 rounded-full bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-amber-700 dark:bg-amber-500 dark:text-slate-950 dark:hover:bg-amber-400"
+                    >
+                      Request Stay Change
+                    </button>
+                  ) : null}
                   {canCancel ? (
                     <button
                       type="button"
@@ -367,6 +454,15 @@ function MyReservations() {
         <InvoiceModal
           bookingId={invoiceBookingId}
           onClose={() => setInvoiceBookingId(null)}
+        />
+      ) : null}
+
+      {datesModal ? (
+        <BookingDatesModal
+          booking={datesModal.booking}
+          mode={datesModal.mode}
+          onClose={() => setDatesModal(null)}
+          onSaved={handleDatesSaved}
         />
       ) : null}
     </section>

@@ -8,6 +8,37 @@ export const BOOKING_STATUSES = [
   'cancelled',
 ]
 
+const STAY_CHANGE_STATUSES = ['none', 'pending', 'approved', 'rejected']
+
+const stayChangeRequestSchema = new mongoose.Schema(
+  {
+    requestedCheckInDate: {
+      type: Date,
+    },
+    requestedCheckOutDate: {
+      type: Date,
+    },
+    note: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: [500, 'Stay change note cannot exceed 500 characters'],
+    },
+    status: {
+      type: String,
+      enum: {
+        values: STAY_CHANGE_STATUSES,
+        message: 'Invalid stay change status: {VALUE}',
+      },
+      default: 'none',
+    },
+    requestedAt: {
+      type: Date,
+    },
+  },
+  { _id: false },
+)
+
 const bookingSchema = new mongoose.Schema(
   {
     user: {
@@ -63,6 +94,10 @@ const bookingSchema = new mongoose.Schema(
         message: 'Invalid booking status: {VALUE}',
       },
       default: 'pending',
+    },
+    stayChangeRequest: {
+      type: stayChangeRequestSchema,
+      default: () => ({}),
     },
   },
   { timestamps: true },
