@@ -622,7 +622,7 @@ function Rooms() {
           aria-labelledby="guest-booking-title"
           closedby="any"
           onClose={closeGuestBooking}
-          className="w-[calc(100%-2rem)] max-w-lg rounded-3xl border border-stone-200 bg-white p-6 text-slate-900 shadow-xl dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+          className="w-[calc(100%-2rem)] max-h-[calc(100dvh-2rem)] max-w-lg overflow-y-auto rounded-3xl border border-stone-200 bg-white p-6 text-slate-900 shadow-xl dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
         >
           <p className="text-xs font-medium tracking-[0.18em] text-muted uppercase">
             New booking
@@ -785,12 +785,12 @@ function Rooms() {
       ) : null}
 
       {confirmedBooking ? (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-950/70 p-4 backdrop-blur-sm sm:items-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-950/70 p-4 backdrop-blur-sm">
           <div
             role="dialog"
             aria-modal="true"
             aria-labelledby="booking-confirmed-title"
-            className="relative w-full max-w-lg rounded-3xl border border-amber-500/30 bg-white p-6 text-slate-900 shadow-2xl sm:p-8 dark:border-amber-500/25 dark:bg-slate-900 dark:text-slate-100"
+            className="relative max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto rounded-3xl border border-amber-500/30 bg-white p-6 text-slate-900 shadow-2xl sm:p-8 dark:border-amber-500/25 dark:bg-slate-900 dark:text-slate-100"
           >
             <button
               type="button"

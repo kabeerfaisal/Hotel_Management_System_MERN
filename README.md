@@ -1,6 +1,6 @@
 # LuxuryStay Hospitality — Hotel Management System
 
-A full-stack **MERN** hotel management platform built by **Kabeer Faisal** for LuxuryStay
+A full-stack **MERN** hotel management platform built by **Abdul Kabeer & his Team** for LuxuryStay
 Hospitality. It pairs a five-star guest concierge experience with a role-aware staff console
 for reservations, rooms, billing, service requests, feedback, and hotel settings.
 
@@ -47,6 +47,7 @@ scroll-triggered motion while keeping staff workflows untouched.
 | Frontend   | React 19, React Router                              |
 | Styling    | Tailwind CSS v4                                     |
 | Animation  | GSAP + ScrollTrigger                                |
+| Email      | Nodemailer over SMTP                                |
 | Auth       | JWT access tokens, bcrypt password hashing          |
 | Build/Tool | Vite, Nodemon, Oxlint                               |
 
@@ -117,6 +118,14 @@ Set the following values in `server/.env`:
 | `PORT`           | no       | API port (default `5000`)                        |
 | `JWT_SECRET`     | yes      | Long random string used to sign access tokens    |
 | `JWT_EXPIRES_IN` | no       | Token lifetime, for example `7d`                 |
+| `SMTP_HOST`      | no       | SMTP host (default `smtp.gmail.com`)             |
+| `SMTP_PORT`      | no       | SMTP port (default `587`)                        |
+| `SMTP_USER`      | yes*     | SMTP username / sender account                   |
+| `SMTP_PASS`      | yes*     | SMTP password or Gmail App Password              |
+| `SMTP_FROM`      | no       | From header (default `LuxuryStay Hospitality <noreply@luxurystay.com>`) |
+
+\* Required for password-reset and booking-confirmation emails. For Gmail, enable 2-Step
+Verification and create an **App Password** — regular account passwords are rejected by SMTP.
 
 Generate a strong secret with:
 
@@ -153,8 +162,9 @@ Public registration creates **guest** accounts only. To access the staff portal,
 `admin` in MongoDB (for example with MongoDB Compass), then sign in at `/login`. Admins can create
 and manage the remaining staff accounts from the Users page.
 
-> The local demo returns password-reset codes as `devResetCode` in the API response. Wire a real
-> email provider before deploying to production.
+> Password-reset codes and booking invoices are delivered through Nodemailer using the SMTP
+> settings above. If SMTP credentials are missing, bookings still succeed and return
+> `emailSent: false`; reset delivery failures are logged without revealing account existence.
 
 ---
 

@@ -3,12 +3,47 @@ import crypto from 'node:crypto'
 import jwt from 'jsonwebtoken'
 
 import User from '../models/User.js'
+import { sendEmail } from '../utils/sendEmail.js'
 
 const SALT_ROUNDS = 12
 const MIN_PASSWORD_LENGTH = 8
 const MAX_PASSWORD_LENGTH = 72 // bcrypt only uses the first 72 bytes
 const RESET_CODE_ROUNDS = 10
 const RESET_CODE_TTL_MS = 15 * 60 * 1000
+
+function buildResetEmail(code) {
+  return `
+    <div style="margin:0;padding:32px 16px;background:#f6f3ec;font-family:Arial,Helvetica,sans-serif;color:#2c2925;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #e6dfd2;border-radius:16px;overflow:hidden;">
+        <tr>
+          <td style="padding:28px 32px;background:#171a21;color:#f7f3e8;">
+            <div style="font-size:20px;letter-spacing:2px;font-weight:bold;">LUXURYSTAY</div>
+            <div style="margin-top:6px;font-size:11px;letter-spacing:3px;color:#d8b45a;">HOSPITALITY</div>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:32px;">
+            <h1 style="margin:0 0 12px;font-size:22px;color:#171a21;">Password reset code</h1>
+            <p style="margin:0 0 16px;font-size:14px;line-height:1.6;color:#4b463f;">
+              Use the code below to choose a new password. It expires in 15 minutes.
+            </p>
+            <div style="margin:24px 0;padding:18px;text-align:center;background:#faf6ec;border:1px dashed #d8b45a;border-radius:12px;font-size:30px;letter-spacing:8px;font-weight:bold;color:#171a21;">
+              ${code}
+            </div>
+            <p style="margin:0;font-size:13px;line-height:1.6;color:#6b645a;">
+              If you did not request this reset, you can safely ignore this email.
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:18px 32px;background:#f6f3ec;font-size:11px;color:#8a8175;">
+            LuxuryStay Hospitality · Clifton, Karachi
+          </td>
+        </tr>
+      </table>
+    </div>
+  `
+}
 
 function signToken(user) {
   return jwt.sign(
@@ -192,8 +227,7 @@ export async function login(req, res) {
   }
 }
 
-// Local demo: the plaintext reset code is returned as `devResetCode` instead of
-// being emailed. Replace with a real mail provider before production.
+// Sends a one-time code but never reveals whether the email is registered.
 export async function forgotPassword(req, res) {
   try {
     const { email } = req.body ?? {}
@@ -207,12 +241,11 @@ export async function forgotPassword(req, res) {
 
     const normalizedEmail = String(email).toLowerCase().trim()
     const genericMessage =
-      'If an account exists for this email, a reset code has been generated.'
+      'If an account with that email exists, a 6-digit reset code has been sent to your registered email.'
 
     const user = await User.findOne({ email: normalizedEmail })
 
     if (!user) {
-      // Do not reveal whether the email is registered.
       return res.status(200).json({ success: true, message: genericMessage })
     }
 
@@ -229,13 +262,26 @@ export async function forgotPassword(req, res) {
       },
     )
 
-    return res.status(200).json({
-      success: true,
-      message: 'Reset code generated. It expires in 15 minutes.',
-      expiresInMinutes: RESET_CODE_TTL_MS / 60_000,
-      // Local demo only — remove when wiring a real email provider.
-      devResetCode: resetCode,
-    })
+    try {
+      await sendEmail({
+        to: user.email,
+        subject: 'Your LuxuryStay password reset code',
+        html: buildResetEmail(resetCode),
+        text: `Your LuxuryStay password reset code is ${resetCode}. It expires in 15 minutes. If you did not request this, you can ignore this email.`,
+      })
+    } catch (error) {
+      console.error('[auth] reset email failed:', error.message)
+
+      await User.updateOne(
+        { _id: user._id },
+        { $unset: { resetCode: 1, resetCodeExpiresAt: 1 } },
+      )
+
+      // Keep the response identical for every email address to prevent enumeration.
+      return res.status(200).json({ success: true, message: genericMessage })
+    }
+
+    return res.status(200).json({ success: true, message: genericMessage })
   } catch (error) {
     return sendAuthError(res, error, 'Unable to generate a reset code')
   }

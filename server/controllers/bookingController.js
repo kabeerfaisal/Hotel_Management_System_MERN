@@ -3,6 +3,8 @@ import mongoose from 'mongoose'
 import Booking, { BOOKING_STATUSES } from '../models/Booking.js'
 import Room from '../models/Room.js'
 import ServiceRequest from '../models/ServiceRequest.js'
+import Setting from '../models/Setting.js'
+import { escapeHtml, sendEmail } from '../utils/sendEmail.js'
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000
 const STAFF_ROLES = ['admin', 'manager', 'receptionist']
@@ -109,6 +111,98 @@ function sendBookingError(res, error, fallbackMessage) {
   return res.status(500).json({ success: false, message: fallbackMessage })
 }
 
+function formatPKR(value) {
+  return `PKR ${Number(value || 0).toLocaleString('en-PK', {
+    maximumFractionDigits: 0,
+  })}`
+}
+
+function formatStayDate(value) {
+  return new Date(value).toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  })
+}
+
+function buildBookingEmail({
+  reference,
+  guestName,
+  roomNumber,
+  roomType,
+  checkInDate,
+  checkOutDate,
+  nights,
+  numberOfGuests,
+  roomCharges,
+  taxRate,
+  tax,
+  grandTotal,
+}) {
+  const row = (label, value) => `
+    <tr>
+      <td style="padding:9px 0;font-size:13px;color:#6b645a;">${label}</td>
+      <td style="padding:9px 0;font-size:13px;color:#171a21;text-align:right;font-weight:bold;">${value}</td>
+    </tr>
+  `
+
+  return `
+    <div style="margin:0;padding:32px 16px;background:#f6f3ec;font-family:Arial,Helvetica,sans-serif;color:#2c2925;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;background:#ffffff;border:1px solid #e6dfd2;border-radius:16px;overflow:hidden;">
+        <tr>
+          <td style="padding:28px 32px;background:#171a21;color:#f7f3e8;">
+            <div style="font-size:20px;letter-spacing:2px;font-weight:bold;">LUXURYSTAY</div>
+            <div style="margin-top:6px;font-size:11px;letter-spacing:3px;color:#d8b45a;">HOSPITALITY</div>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:32px;">
+            <h1 style="margin:0 0 8px;font-size:23px;color:#171a21;">Reservation confirmed</h1>
+            <p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#4b463f;">
+              Dear ${escapeHtml(guestName)}, thank you for choosing LuxuryStay. Your stay details and invoice are below.
+            </p>
+
+            <div style="margin-bottom:22px;padding:14px 16px;background:#faf6ec;border:1px solid #eadfc4;border-radius:12px;">
+              <div style="font-size:11px;letter-spacing:2px;color:#8a8175;text-transform:uppercase;">Booking reference</div>
+              <div style="margin-top:4px;font-size:18px;font-weight:bold;color:#171a21;">${escapeHtml(reference)}</div>
+            </div>
+
+            <h2 style="margin:0 0 8px;font-size:15px;color:#171a21;">Stay details</h2>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+              ${row('Guest', escapeHtml(guestName))}
+              ${row('Suite', `${escapeHtml(roomType)} · Room ${escapeHtml(roomNumber)}`)}
+              ${row('Check-in', formatStayDate(checkInDate))}
+              ${row('Check-out', formatStayDate(checkOutDate))}
+              ${row('Nights', nights)}
+              ${row('Guests', numberOfGuests)}
+            </table>
+
+            <h2 style="margin:24px 0 8px;font-size:15px;color:#171a21;">Invoice summary</h2>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #e6dfd2;">
+              ${row('Room charges', formatPKR(roomCharges))}
+              ${row(`Tax (${Math.round(taxRate * 100)}%)`, formatPKR(tax))}
+              <tr>
+                <td style="padding:14px 0 0;font-size:15px;color:#171a21;font-weight:bold;border-top:1px solid #e6dfd2;">Grand total</td>
+                <td style="padding:14px 0 0;font-size:17px;color:#171a21;text-align:right;font-weight:bold;border-top:1px solid #e6dfd2;">${formatPKR(grandTotal)}</td>
+              </tr>
+            </table>
+
+            <p style="margin:24px 0 0;font-size:13px;line-height:1.6;color:#6b645a;">
+              Our concierge team is available 24/7. Reply to this email or call +92 3322334100 if you need anything before arrival.
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:18px 32px;background:#f6f3ec;font-size:11px;color:#8a8175;">
+            LuxuryStay Hospitality · Clifton, Karachi · This email also serves as your PKR invoice.
+          </td>
+        </tr>
+      </table>
+    </div>
+  `
+}
+
 export async function createBooking(req, res) {
   try {
     const {
@@ -185,9 +279,55 @@ export async function createBooking(req, res) {
       return created
     })
 
+    let emailSent = false
+
+    try {
+      const guestEmail = booking.user?.email
+
+      if (guestEmail) {
+        const setting = await Setting.findOne().select('taxRate').lean()
+        const taxRate =
+          setting && Number.isFinite(Number(setting.taxRate))
+            ? Number(setting.taxRate) / 100
+            : DEFAULT_TAX_RATE
+
+        const roomCharges = Math.round((booking.totalPrice ?? 0) * 100) / 100
+        const tax = Math.round(roomCharges * taxRate * 100) / 100
+        const grandTotal = Math.round((roomCharges + tax) * 100) / 100
+        const reference = `LS-${String(booking._id).slice(-6).toUpperCase()}`
+        const roomType = booking.room?.type ?? 'Suite'
+        const roomNumber = booking.room?.roomNumber ?? '—'
+
+        await sendEmail({
+          to: guestEmail,
+          subject: `Reservation ${reference} confirmed — LuxuryStay`,
+          html: buildBookingEmail({
+            reference,
+            guestName: booking.user?.name ?? 'Guest',
+            roomNumber,
+            roomType: roomType.charAt(0).toUpperCase() + roomType.slice(1),
+            checkInDate: booking.checkInDate,
+            checkOutDate: booking.checkOutDate,
+            nights,
+            numberOfGuests,
+            roomCharges,
+            taxRate,
+            tax,
+            grandTotal,
+          }),
+          text: `Your LuxuryStay reservation ${reference} is confirmed. Room ${roomNumber}, ${formatStayDate(booking.checkInDate)} to ${formatStayDate(booking.checkOutDate)}. Room charges: ${formatPKR(roomCharges)}. Tax: ${formatPKR(tax)}. Grand total: ${formatPKR(grandTotal)}.`,
+        })
+
+        emailSent = true
+      }
+    } catch (error) {
+      console.error('[bookings] confirmation email failed:', error.message)
+    }
+
     return res.status(201).json({
       success: true,
       message: 'Booking created successfully',
+      emailSent,
       booking,
     })
   } catch (error) {
@@ -297,8 +437,7 @@ export async function getBookingInvoice(req, res) {
       serviceItems.reduce((total, service) => total + service.charge, 0),
     )
 
-    const Setting = mongoose.models.Setting
-    const setting = Setting ? await Setting.findOne().select('taxRate').lean() : null
+    const setting = await Setting.findOne().select('taxRate').lean()
     const taxRate =
       setting && Number.isFinite(Number(setting.taxRate))
         ? Number(setting.taxRate) / 100

@@ -35,7 +35,7 @@ function InvoiceModal({ bookingId, onClose }) {
   }, [bookingId])
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 sm:items-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-4">
       <style>{`
         @media print {
           body * { visibility: hidden; }
@@ -71,7 +71,7 @@ function InvoiceModal({ bookingId, onClose }) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="invoice-title"
-        className="invoice-print-area relative my-8 w-full max-w-2xl rounded-3xl border border-line bg-surface p-6 text-content shadow-xl print:my-0 print:rounded-none print:border-0 print:bg-white print:p-0 print:text-black sm:p-8"
+        className="invoice-print-area relative max-h-[calc(100dvh-2rem)] w-full max-w-2xl overflow-y-auto rounded-3xl border border-line bg-surface p-6 text-content shadow-xl print:my-0 print:max-h-none print:overflow-visible print:rounded-none print:border-0 print:bg-white print:p-0 print:text-black sm:p-8"
       >
         <div className="invoice-no-print mb-4 flex justify-end">
           <button

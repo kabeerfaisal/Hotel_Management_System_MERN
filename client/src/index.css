@@ -121,6 +121,10 @@
     }
   }
 
+  dialog {
+    margin: auto;
+  }
+
   /* Keep scroll gestures inside an open modal from moving the page behind it. */
   dialog:modal {
     overscroll-behavior: contain;

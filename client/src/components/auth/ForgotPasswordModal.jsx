@@ -11,8 +11,8 @@ function extractError(requestError, fallback) {
 }
 
 /**
- * Two-step password reset: request a 6-digit code, then set a new password.
- * The API returns the code as `devResetCode` for local demo testing.
+ * Two-step password reset: request a 6-digit code by email, then set a new
+ * password.
  */
 function ForgotPasswordModal({ initialEmail = '', onClose }) {
   const [step, setStep] = useState('request')
@@ -21,7 +21,6 @@ function ForgotPasswordModal({ initialEmail = '', onClose }) {
   const [newPassword, setNewPassword] = useState('')
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
-  const [devCode, setDevCode] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
@@ -49,17 +48,14 @@ function ForgotPasswordModal({ initialEmail = '', onClose }) {
 
     try {
       const data = await forgotPassword(normalizedEmail)
-      setDevCode(data.devResetCode ?? '')
       setNotice(
-        data.devResetCode
-          ? 'Reset code generated for this demo account. Use the code below.'
-          : data.message ??
-              'If an account exists for this email, a reset code has been generated.',
+        data.message ??
+          'If an account with that email exists, a 6-digit reset code has been sent to your registered email.',
       )
       setStep('reset')
     } catch (requestError) {
       setError(
-        extractError(requestError, 'Unable to generate a reset code. Please try again.'),
+        extractError(requestError, 'Unable to send a reset code. Please try again.'),
       )
     } finally {
       setIsSubmitting(false)
@@ -100,7 +96,7 @@ function ForgotPasswordModal({ initialEmail = '', onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 sm:items-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-4">
       <button
         type="button"
         onClick={onClose}
@@ -112,7 +108,7 @@ function ForgotPasswordModal({ initialEmail = '', onClose }) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="forgot-password-title"
-        className="relative my-8 w-full max-w-md rounded-3xl border border-stone-200 bg-white p-6 text-slate-900 shadow-2xl sm:p-8 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+        className="relative max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-3xl border border-stone-200 bg-white p-6 text-slate-900 shadow-2xl sm:p-8 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
       >
         <button
           type="button"
@@ -159,7 +155,7 @@ function ForgotPasswordModal({ initialEmail = '', onClose }) {
             </h2>
             <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
               {step === 'request'
-                ? 'Enter your account email and we will generate a 6-digit reset code valid for 15 minutes.'
+                ? 'Enter your account email and we will send a 6-digit reset code valid for 15 minutes.'
                 : `Enter the code sent to ${email.trim()} and choose a new password.`}
             </p>
 
@@ -175,13 +171,9 @@ function ForgotPasswordModal({ initialEmail = '', onClose }) {
             {notice ? (
               <div className="mt-5 rounded-xl border border-amber-500/30 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-200">
                 <p>{notice}</p>
-                {devCode ? (
-                  <p className="mt-2 font-mono text-lg font-semibold tracking-[0.3em]">
-                    {devCode}
-                  </p>
-                ) : null}
                 <p className="mt-1 text-xs text-amber-800/80 dark:text-amber-200/70">
-                  Demo mode returns the code here instead of sending an email.
+                  Check your registered inbox and spam folder for the 6-digit code. It
+                  expires in 15 minutes.
                 </p>
               </div>
             ) : null}
@@ -275,7 +267,6 @@ function ForgotPasswordModal({ initialEmail = '', onClose }) {
                       setStep('request')
                       setError('')
                       setNotice('')
-                      setDevCode('')
                     }}
                     className="text-slate-600 underline-offset-4 hover:underline dark:text-slate-400"
                   >

@@ -1,7 +1,4 @@
-/**
- * Shown in the guest footer and staff sidebar marks.
- * Change this one value to rebrand the developer credit.
- */
-export const DEVELOPER_NAME = 'Kabeer Faisal'
+//  Shown in the guest footer and staff sidebar marks.
+export const DEVELOPER_NAME = 'Abdul Kabeer & his Team'
 
 export const HOTEL_NAME = 'LuxuryStay'

@@ -43,7 +43,7 @@ export default function BookingModal({ onClose, initialRoom }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 sm:items-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-4">
       <button
         type="button"
         onClick={onClose}
@@ -55,7 +55,7 @@ export default function BookingModal({ onClose, initialRoom }) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="booking-modal-title"
-        className="relative my-8 w-full max-w-lg rounded-3xl border border-line bg-surface p-6 shadow-xl"
+        className="relative max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto rounded-3xl border border-line bg-surface p-6 shadow-xl"
       >
         <p className="text-xs font-medium tracking-[0.18em] text-muted uppercase">
           New booking
