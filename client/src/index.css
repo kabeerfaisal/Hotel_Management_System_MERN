@@ -32,29 +32,77 @@
   --font-display: var(--lux-font-display);
 }
 
+/*
+ * Palette remap — replaces Tailwind's default blue/yellow ramps so every
+ * existing utility (slate, stone, amber, emerald) renders in the warm
+ * black / cream / bronze LuxuryStay theme.
+ */
+@theme {
+  --color-white: #fbf8f3;
+  --color-black: #090807;
+
+  --color-slate-50: #f5efe6;
+  --color-slate-100: #ede4d7;
+  --color-slate-200: #ddcfbb;
+  --color-slate-300: #c8b49a;
+  --color-slate-400: #a08b72;
+  --color-slate-500: #7f6a54;
+  --color-slate-600: #5c4a38;
+  --color-slate-700: #453528;
+  --color-slate-800: #2e231a;
+  --color-slate-900: #1b1510;
+  --color-slate-950: #090807;
+
+  --color-stone-50: #fbf8f3;
+  --color-stone-100: #f5efe6;
+  --color-stone-200: #e8decd;
+  --color-stone-300: #d7c7b2;
+  --color-stone-400: #b8a187;
+  --color-stone-500: #8c6239;
+  --color-stone-600: #6e4b2c;
+  --color-stone-700: #5c3d28;
+  --color-stone-800: #3b281b;
+  --color-stone-900: #241810;
+  --color-stone-950: #120d09;
+
+  --color-amber-50: #fbf6ee;
+  --color-amber-100: #f5eadb;
+  --color-amber-200: #efdfc8;
+  --color-amber-300: #e5cfaf;
+  --color-amber-400: #d8bc96;
+  --color-amber-500: #c8a274;
+  --color-amber-600: #8c6239;
+  --color-amber-700: #6e4b2c;
+  --color-amber-800: #5c3d28;
+  --color-amber-900: #3b281b;
+  --color-amber-950: #241810;
+
+  --color-emerald-800: #4f5a35;
+}
+
 @layer base {
   :root {
     color-scheme: light;
 
-    /* Light: warm ivory, ink, antique gold */
-    --lux-canvas: oklch(0.972 0.008 85);
-    --lux-surface: oklch(0.995 0.004 85);
-    --lux-elevated: oklch(0.945 0.012 85);
-    --lux-content: oklch(0.24 0.016 60);
-    --lux-muted: oklch(0.44 0.014 60);
-    --lux-accent: oklch(0.8 0.12 82);
-    --lux-accent-strong: oklch(0.45 0.09 70);
-    --lux-on-accent: oklch(0.22 0.02 60);
-    --lux-line: oklch(0.88 0.012 85);
-    --lux-line-strong: oklch(0.55 0.015 70);
-    --lux-danger: oklch(0.5 0.19 25);
-    --lux-danger-surface: oklch(0.95 0.03 25);
-    --lux-success: oklch(0.44 0.12 150);
-    --lux-success-surface: oklch(0.95 0.04 150);
-    --lux-warning: oklch(0.48 0.11 70);
-    --lux-warning-surface: oklch(0.96 0.05 85);
-    --lux-info: oklch(0.45 0.09 240);
-    --lux-info-surface: oklch(0.95 0.03 240);
+    /* Light: warm cream, ink-brown text, bronze accents */
+    --lux-canvas: #f5efe6;
+    --lux-surface: #fbf8f3;
+    --lux-elevated: #ede4d7;
+    --lux-content: #3b281b;
+    --lux-muted: #6e4b2c;
+    --lux-accent: #c8a274;
+    --lux-accent-strong: #8c6239;
+    --lux-on-accent: #090807;
+    --lux-line: #e5d8c6;
+    --lux-line-strong: #8c6239;
+    --lux-danger: #7a2e24;
+    --lux-danger-surface: #f5e1dc;
+    --lux-success: #55603a;
+    --lux-success-surface: #edf0e2;
+    --lux-warning: #8c6239;
+    --lux-warning-surface: #f5e9da;
+    --lux-info: #8c6239;
+    --lux-info-surface: #f0e6d8;
 
     --lux-font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system,
       "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -65,25 +113,25 @@
   .dark {
     color-scheme: dark;
 
-    /* Dark: deep obsidian slate, warm white, lit champagne gold */
-    --lux-canvas: oklch(0.145 0.012 250);
-    --lux-surface: oklch(0.19 0.014 250);
-    --lux-elevated: oklch(0.24 0.014 250);
-    --lux-content: oklch(0.95 0.012 85);
-    --lux-muted: oklch(0.72 0.012 85);
-    --lux-accent: oklch(0.79 0.12 82);
-    --lux-accent-strong: oklch(0.84 0.11 85);
-    --lux-on-accent: oklch(0.2 0.02 60);
-    --lux-line: oklch(0.3 0.014 250);
-    --lux-line-strong: oklch(0.55 0.02 85);
-    --lux-danger: oklch(0.75 0.15 25);
-    --lux-danger-surface: oklch(0.28 0.06 25);
-    --lux-success: oklch(0.8 0.13 150);
-    --lux-success-surface: oklch(0.28 0.06 150);
-    --lux-warning: oklch(0.85 0.12 85);
-    --lux-warning-surface: oklch(0.3 0.06 80);
-    --lux-info: oklch(0.8 0.09 240);
-    --lux-info-surface: oklch(0.29 0.05 240);
+    /* Dark: pure black canvas, warm cream text, lit bronze accents */
+    --lux-canvas: #090807;
+    --lux-surface: #12100d;
+    --lux-elevated: #1b1611;
+    --lux-content: #fbf8f3;
+    --lux-muted: #c8a274;
+    --lux-accent: #c8a274;
+    --lux-accent-strong: #dcc29a;
+    --lux-on-accent: #090807;
+    --lux-line: #3b281b;
+    --lux-line-strong: #8c6239;
+    --lux-danger: #e4a79b;
+    --lux-danger-surface: #2e1714;
+    --lux-success: #b8c39a;
+    --lux-success-surface: #23281a;
+    --lux-warning: #d8b98c;
+    --lux-warning-surface: #2a2016;
+    --lux-info: #c8a274;
+    --lux-info-surface: #2a2018;
   }
 
   html {
@@ -133,6 +181,6 @@
   dialog::backdrop {
     overflow: hidden;
     overscroll-behavior: contain;
-    background-color: rgb(0 0 0 / 0.5);
+    background-color: rgb(9 8 7 / 0.65);
   }
 }
