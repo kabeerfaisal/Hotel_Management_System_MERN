@@ -118,10 +118,6 @@ Set the following values in `server/.env`:
 | `PORT`           | no       | API port (default `5000`)                        |
 | `JWT_SECRET`     | yes      | Long random string used to sign access tokens    |
 | `JWT_EXPIRES_IN` | no       | Token lifetime, for example `7d`                 |
-| `SMTP_HOST`      | no       | SMTP host (default `smtp.gmail.com`)             |
-| `SMTP_PORT`      | no       | SMTP port (default `587`)                        |
-| `SMTP_USER`      | yes*     | SMTP username / sender account                   |
-| `SMTP_PASS`      | yes*     | SMTP password or Gmail App Password              |
 | `SMTP_FROM`      | no       | From header (default `LuxuryStay Hospitality <noreply@luxurystay.com>`) |
 | `BREVO_API_KEY`  | no       | Brevo Transactional Email API key (preferred)    |
 
@@ -160,6 +156,11 @@ npm run dev
 The Vite dev server proxies `/api` requests to the Express server, so the browser uses one origin.
 
 ### First admin account
+
+email: admin@gmail.com
+pass: admin@12345
+
+or
 
 Public registration creates **guest** accounts only. To access the staff portal, promote a user to
 `admin` in MongoDB (for example with MongoDB Compass), then sign in at `/login`. Admins can create
@@ -243,6 +244,6 @@ All protected routes expect `Authorization: Bearer <token>`. Roles are enforced 
 
 ## Author
 
-**Kabeer Faisal** — LuxuryStay Hospitality
+**Abdul Kabeer & His Team** — LuxuryStay
 
-© 2026 LuxuryStay Hospitality. All rights reserved.
+© 2026 LuxuryStay. All rights reserved.
