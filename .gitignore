@@ -31,6 +31,3 @@ Thumbs.db
 *.suo
 *.sw?
 
-# ── Local agent tooling (machine-specific, not part of the app) ──
-.agents/
-skills-lock.json
