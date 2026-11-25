@@ -6,6 +6,12 @@ for reservations, rooms, billing, service requests, feedback, and hotel settings
 
 ---
 
+## Project Live URLS
+**Front-END URL**: https://luxurystayhotel.vercel.app/
+**Back-END URL**: https://luxurystay-mfj0.onrender.com/
+
+---
+
 ## Overview
 
 LuxuryStay is split into two experiences behind one authentication layer:
