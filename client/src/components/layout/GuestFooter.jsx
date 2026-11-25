@@ -95,7 +95,7 @@ function GuestFooter() {
       </div>
 
       <div className="border-t border-stone-200/80 px-4 py-5 text-center text-[0.65rem] font-medium tracking-[0.18em] text-slate-500 uppercase sm:px-6 dark:border-amber-500/15 dark:text-slate-400">
-        Crafted by {DEVELOPER_NAME} • {HOTEL_NAME} Hospitality
+        Created by {DEVELOPER_NAME} • {HOTEL_NAME}
       </div>
     </footer>
   )
