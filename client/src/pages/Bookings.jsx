@@ -18,6 +18,16 @@ const STATUS_COLOR_MAP = {
   cancelled: 'bg-danger-surface text-danger',
 }
 
+// Mirrors the backend lifecycle: forward-only, with `checked-out` and
+// `cancelled` as final states.
+const ALLOWED_STATUS_TRANSITIONS = {
+  pending: ['pending', 'confirmed', 'cancelled'],
+  confirmed: ['confirmed', 'checked-in', 'cancelled'],
+  'checked-in': ['checked-in', 'checked-out'],
+  'checked-out': ['checked-out'],
+  cancelled: ['cancelled'],
+}
+
 function Bookings() {
   const { user } = useAuth()
   const isStaff = ['admin', 'manager', 'receptionist'].includes(user?.role)
@@ -197,6 +207,11 @@ function Bookings() {
                       const totalPrice = booking.totalPrice
 
                       const statusColor = STATUS_COLOR_MAP[booking.status] ?? 'bg-elevated text-muted'
+                      const allowedStatuses =
+                        ALLOWED_STATUS_TRANSITIONS[booking.status] ?? [
+                          booking.status,
+                        ]
+                      const isFinalStatus = allowedStatuses.length <= 1
                       const stayChange = booking.stayChangeRequest
                       const hasPendingStayChange =
                         booking.status === 'checked-in' &&
@@ -241,22 +256,34 @@ function Bookings() {
                               </button>
                               <select
                                 onChange={(e) => {
+                                  const nextStatus = e.target.value
+
+                                  if (nextStatus === booking.status) return
+
                                   if (
                                     window.confirm(
-                                      `Update booking ${booking.room?.roomNumber} to ${e.target.value}?`,
+                                      `Update booking ${booking.room?.roomNumber} to ${nextStatus}?`,
                                     )
                                   ) {
-                                    handleStatusUpdate(booking._id, e.target.value)
+                                    handleStatusUpdate(booking._id, nextStatus)
                                   }
                                 }}
                                 value={booking.status}
-                                className="rounded-lg border border-line px-2 py-1 text-xs font-semibold transition-colors"
+                                disabled={isFinalStatus}
+                                title={
+                                  isFinalStatus
+                                    ? `${booking.status} is a final status and cannot be changed`
+                                    : undefined
+                                }
+                                className="rounded-lg border border-line px-2 py-1 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60"
                               >
-                                <option value="pending">pending</option>
-                                <option value="confirmed">confirmed</option>
-                                <option value="checked-in">checked-in</option>
-                                <option value="checked-out">checked-out</option>
-                                <option value="cancelled">cancelled</option>
+                                {allowedStatuses.map((status) => (
+                                  <option key={status} value={status}>
+                                    {status === booking.status
+                                      ? `${status} (current)`
+                                      : status}
+                                  </option>
+                                ))}
                               </select>
                             </div>
                           </td>

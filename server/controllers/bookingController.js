@@ -20,6 +20,16 @@ const DEFAULT_TAX_RATE = 0.1
 // Statuses that hold a room's dates and should be shown as unavailable.
 const BLOCKING_STATUSES = ['pending', 'confirmed', 'checked-in']
 
+// Forward-only lifecycle. Each entry also lists itself so re-saving the
+// current status stays a valid no-op. `checked-out` and `cancelled` are final.
+const ALLOWED_STATUS_TRANSITIONS = {
+  pending: ['pending', 'confirmed', 'cancelled'],
+  confirmed: ['confirmed', 'checked-in', 'cancelled'],
+  'checked-in': ['checked-in', 'checked-out'],
+  'checked-out': ['checked-out'],
+  cancelled: ['cancelled'],
+}
+
 const BOOKING_POPULATE = [
   { path: 'user', select: 'name email' },
   { path: 'room', select: 'roomNumber type pricePerNight' },
@@ -1093,6 +1103,15 @@ export async function updateBookingStatus(req, res) {
 
     if (!booking) {
       return res.status(404).json({ success: false, message: 'Booking not found' })
+    }
+
+    const allowedNextStatuses = ALLOWED_STATUS_TRANSITIONS[booking.status] ?? []
+
+    if (!allowedNextStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: `A ${booking.status} booking cannot be changed to ${status}. Allowed from ${booking.status}: ${allowedNextStatuses.join(', ')}`,
+      })
     }
 
     if (booking.status !== status) {
